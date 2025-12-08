@@ -72,8 +72,8 @@ class _LoginScreenState extends State<LoginScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.blue.shade600,
-              Colors.purple.shade600,
+              Colors.blue.shade800,
+              Colors.lightBlueAccent,
             ],
           ),
         ),
@@ -167,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen>
                               "Login to continue shopping",
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey.shade600,
+                                color: Colors.grey.shade800,
                               ),
                             ),
 
@@ -211,15 +211,15 @@ class _LoginScreenState extends State<LoginScreen>
                                 errorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: const BorderSide(
-                                      color: Colors.red, width: 2),
+                                      color: Colors.blue, width: 2),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: const BorderSide(
-                                      color: Colors.red, width: 2),
+                                      color: Colors.blue, width: 2),
                                 ),
                                 filled: true,
-                                fillColor: Colors.grey.shade50,
+                                fillColor: Colors.white,
                                 contentPadding: const EdgeInsets.all(16),
                               ),
                               validator: (value) {
@@ -246,12 +246,12 @@ class _LoginScreenState extends State<LoginScreen>
                                 prefixIcon: Container(
                                   margin: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.purple.shade50,
+                                    color: Colors.blue.shade50,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Icon(
                                     Icons.lock_outline,
-                                    color: Colors.purple.shade600,
+                                    color: Colors.blue.shade600,
                                   ),
                                 ),
                                 suffixIcon: IconButton(
@@ -259,7 +259,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     _obscurePassword
                                         ? Icons.visibility_outlined
                                         : Icons.visibility_off_outlined,
-                                    color: Colors.grey.shade600,
+                                    color: Colors.blue.shade600,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -279,19 +279,19 @@ class _LoginScreenState extends State<LoginScreen>
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide(
-                                    color: Colors.purple.shade600,
+                                    color: Colors.blue.shade600,
                                     width: 2,
                                   ),
                                 ),
                                 errorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: const BorderSide(
-                                      color: Colors.red, width: 2),
+                                      color: Colors.blue, width: 2),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: const BorderSide(
-                                      color: Colors.red, width: 2),
+                                      color: Colors.blue, width: 2),
                                 ),
                                 filled: true,
                                 fillColor: Colors.grey.shade50,
@@ -354,20 +354,21 @@ class _LoginScreenState extends State<LoginScreen>
                                 onPressed: _isLoading ? null : _handleLogin,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.blue.shade600,
-                                  foregroundColor: Colors.white,
+                                  foregroundColor: Colors
+                                      .white, // logim text sa loob ng button
                                   elevation: 8,
-                                  shadowColor: Colors.blue.withOpacity(0.5),
+                                  shadowColor: Colors.grey.withOpacity(0.5),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  disabledBackgroundColor: Colors.grey.shade300,
+                                  disabledBackgroundColor: Colors.grey[20],
                                 ),
                                 child: _isLoading
                                     ? const SizedBox(
                                         height: 24,
                                         width: 24,
                                         child: CircularProgressIndicator(
-                                          color: Colors.white,
+                                          color: Colors.blue,
                                           strokeWidth: 2.5,
                                         ),
                                       )
@@ -409,7 +410,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       Text('Sign up feature coming soon!'),
                                     ],
                                   ),
-                                  backgroundColor: Colors.purple,
+                                  backgroundColor: Colors.blue.shade700,
                                   behavior: SnackBarBehavior.floating,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10),
