@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'product_list_screen.dart';
 import 'sell_item_screen.dart';
@@ -66,7 +68,7 @@ class HomeScreen extends StatelessWidget {
                           child: Icon(
                             Icons.shopping_bag_outlined,
                             color: Colors.blue.shade700,
-                            size: 28,
+                            size: 25,
                           ),
                         ),
                       ],
@@ -134,7 +136,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
 
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 30),
 
                       // Browse Button
                       _buildActionButton(
@@ -153,7 +155,7 @@ class HomeScreen extends StatelessWidget {
                         },
                       ),
 
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 12),
 
                       // Sell Button
                       _buildActionButton(
@@ -161,7 +163,7 @@ class HomeScreen extends StatelessWidget {
                         icon: Icons.add_circle_outline_rounded,
                         label: 'Sell an Item',
                         description: 'List your item in seconds',
-                        color: Colors.purple,
+                        color: Colors.blue,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -179,7 +181,7 @@ class HomeScreen extends StatelessWidget {
               // Bottom Navigation
               Container(
                 padding:
-                    const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   boxShadow: [
@@ -555,7 +557,10 @@ class HomeScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
-                        child: const Text('Logout'),
+                        child: Text(
+                          'Logout',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ],
                   ),
