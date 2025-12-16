@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -72,8 +73,8 @@ class _LoginScreenState extends State<LoginScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.blue.shade800,
-              Colors.lightBlueAccent,
+              const Color.fromARGB(255, 109, 202, 157),
+              const Color.fromARGB(255, 243, 230, 108)
             ],
           ),
         ),
@@ -88,65 +89,55 @@ class _LoginScreenState extends State<LoginScreen>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo/Icon
+                      // Logo/Image
                       Container(
-                        width: 120,
-                        height: 120,
                         decoration: BoxDecoration(
-                          color: Colors.white,
                           shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 20,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
                         ),
-                        child: Icon(
-                          Icons.shopping_bag_rounded,
-                          size: 60,
-                          color: Colors.blue.shade600,
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundImage: AssetImage('lib/assets/logo.png'),
                         ),
                       ),
 
-                      const SizedBox(height: 30),
-
+                      const SizedBox(height: 10),
                       // Title
-                      const Text(
+                      // TANGGALIN ang 'const' dito.
+                      Text(
                         "CampusThrift",
-                        style: TextStyle(
-                          fontSize: 40,
+                        // PALITAN ang TextStyle ng GoogleFonts.robotoSlab
+                        style: GoogleFonts.robotoSlab(
+                          fontSize: 30,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                          color: Colors.black,
                           letterSpacing: 1,
+                          // Hindi na kailangan ang 'fontStyle' unless gusto mo ng italic.
                         ),
                       ),
-
                       const SizedBox(height: 8),
 
                       Text(
                         "Your Campus Marketplace",
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.grey.shade900,
                           letterSpacing: 0.5,
                         ),
                       ),
 
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 30),
 
                       // Login Card
                       Container(
                         padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.white.withOpacity(0.4),
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.2),
-                              blurRadius: 30,
-                              offset: const Offset(0, 15),
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
                             ),
                           ],
                         ),
@@ -159,7 +150,7 @@ class _LoginScreenState extends State<LoginScreen>
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                color: Colors.grey.shade800,
+                                color: Colors.black87,
                               ),
                             ),
                             const SizedBox(height: 8),
@@ -167,7 +158,7 @@ class _LoginScreenState extends State<LoginScreen>
                               "Login to continue shopping",
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey.shade800,
+                                color: Colors.grey.shade900,
                               ),
                             ),
 
@@ -184,12 +175,24 @@ class _LoginScreenState extends State<LoginScreen>
                                 prefixIcon: Container(
                                   margin: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
+                                    color: Colors.blueGrey.shade50,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Icon(
-                                    Icons.email_outlined,
-                                    color: Colors.blue.shade600,
+                                  child: ShaderMask(
+                                    shaderCallback: (bounds) {
+                                      return const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Color.fromARGB(255, 109, 202, 157),
+                                          Color.fromARGB(255, 243, 230, 108),
+                                        ],
+                                      ).createShader(bounds);
+                                    },
+                                    child: const Icon(
+                                      Icons.email_outlined,
+                                      color: Colors.white,
+                                    ),
                                   ),
                                 ),
                                 border: OutlineInputBorder(
@@ -199,24 +202,26 @@ class _LoginScreenState extends State<LoginScreen>
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide:
-                                      BorderSide(color: Colors.grey.shade200),
+                                      BorderSide(color: Colors.grey.shade900),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide(
-                                    color: Colors.blue.shade600,
+                                    color: Colors.blueGrey.shade600,
                                     width: 2,
                                   ),
                                 ),
                                 errorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                      color: Colors.blue, width: 2),
+                                  borderSide: BorderSide(
+                                      color: Colors.blueGrey.shade600,
+                                      width: 2),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                      color: Colors.blue, width: 2),
+                                  borderSide: BorderSide(
+                                      color: Colors.blueGrey.shade600,
+                                      width: 2),
                                 ),
                                 filled: true,
                                 fillColor: Colors.white,
@@ -246,20 +251,34 @@ class _LoginScreenState extends State<LoginScreen>
                                 prefixIcon: Container(
                                   margin: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.blue.shade50,
+                                    color: Colors.blueGrey.shade50,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
-                                  child: Icon(
-                                    Icons.lock_outline,
-                                    color: Colors.blue.shade600,
+                                  child: ShaderMask(
+                                    shaderCallback: (bounds) {
+                                      return const LinearGradient(
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                        colors: [
+                                          Color.fromARGB(255, 109, 202, 157),
+                                          Color.fromARGB(255, 243, 230, 108),
+                                        ],
+                                      ).createShader(bounds);
+                                    },
+                                    child: const Icon(
+                                      Icons.lock_outline,
+                                      color: Colors.white, // IMPORTANT
+                                    ),
                                   ),
                                 ),
+
+                                // 👁️ Show / Hide Password
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscurePassword
-                                        ? Icons.visibility_outlined
-                                        : Icons.visibility_off_outlined,
-                                    color: Colors.blue.shade600,
+                                        ? Icons.visibility_off_outlined
+                                        : Icons.visibility_outlined,
+                                    color: Colors.grey.shade800,
                                   ),
                                   onPressed: () {
                                     setState(() {
@@ -267,6 +286,7 @@ class _LoginScreenState extends State<LoginScreen>
                                     });
                                   },
                                 ),
+
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide.none,
@@ -274,12 +294,12 @@ class _LoginScreenState extends State<LoginScreen>
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide:
-                                      BorderSide(color: Colors.grey.shade200),
+                                      BorderSide(color: Colors.grey.shade900),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide(
-                                    color: Colors.blue.shade600,
+                                    color: Colors.blueGrey.shade600,
                                     width: 2,
                                   ),
                                 ),
@@ -294,7 +314,7 @@ class _LoginScreenState extends State<LoginScreen>
                                       color: Colors.blue, width: 2),
                                 ),
                                 filled: true,
-                                fillColor: Colors.grey.shade50,
+                                fillColor: Colors.white,
                                 contentPadding: const EdgeInsets.all(16),
                               ),
                               validator: (value) {
@@ -307,7 +327,6 @@ class _LoginScreenState extends State<LoginScreen>
                                 return null;
                               },
                             ),
-
                             const SizedBox(height: 16),
 
                             // Forgot Password
@@ -337,7 +356,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 child: Text(
                                   "Forgot Password?",
                                   style: TextStyle(
-                                    color: Colors.blue.shade600,
+                                    color: Colors.grey.shade900,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -394,7 +413,7 @@ class _LoginScreenState extends State<LoginScreen>
                           Text(
                             "Don't have an account? ",
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.9),
+                              color: Colors.grey.shade900,
                               fontSize: 14,
                             ),
                           ),
@@ -423,14 +442,14 @@ class _LoginScreenState extends State<LoginScreen>
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
-                            child: const Text(
+                            child: Text(
                               "Sign Up",
                               style: TextStyle(
-                                color: Colors.white,
+                                color: Colors.grey.shade900,
                                 fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 decoration: TextDecoration.underline,
-                                decorationColor: Colors.white,
+                                decorationColor: Colors.grey.shade900,
                               ),
                             ),
                           ),
