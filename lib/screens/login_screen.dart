@@ -372,7 +372,7 @@ class _LoginScreenState extends State<LoginScreen>
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _handleLogin,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue.shade600,
+                                  backgroundColor: Colors.blueGrey.shade800,
                                   foregroundColor: Colors
                                       .white, // logim text sa loob ng button
                                   elevation: 8,
