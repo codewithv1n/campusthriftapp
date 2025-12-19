@@ -10,17 +10,24 @@ dependencies:
   flutter:
     sdk: flutter
   provider: ^6.0.5
+  google_fonts: ^6.3.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^2.0.1
-  flutter_launcher_icons: ^0.13.1
+  flutter_native_splash: ^2.4.0
 
-flutter_icons:
-  android: true
-  ios: true
-  image_path: "web/icons/logo_1.png"
+
 
 flutter:
   uses-material-design: true
+  assets:
+    - lib/assets/
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: web/icons/logo_512.png
+  android: true
+  ios: true
+  android_gravity: center
