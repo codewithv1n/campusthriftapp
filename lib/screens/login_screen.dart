@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'signup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -418,24 +419,36 @@ class _LoginScreenState extends State<LoginScreen>
                             ),
                           ),
                           TextButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: const Row(
-                                    children: [
-                                      Icon(Icons.info_outline,
-                                          color: Colors.white),
-                                      SizedBox(width: 12),
-                                      Text('Sign up feature coming soon!'),
-                                    ],
-                                  ),
-                                  backgroundColor: Colors.blue.shade700,
-                                  behavior: SnackBarBehavior.floating,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
+                            onPressed: () async {
+                              // Navigate to sign up screen and wait for result
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const SignUpScreen(),
                                 ),
                               );
+
+                              // Show green success notification if signup was successful
+                              if (result == true && mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Row(
+                                      children: [
+                                        Icon(Icons.check_circle_outline,
+                                            color: Colors.white),
+                                        SizedBox(width: 12),
+                                        Text(
+                                            'Account created successfully! Please login.'),
+                                      ],
+                                    ),
+                                    backgroundColor: Colors.green.shade600,
+                                    behavior: SnackBarBehavior.floating,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                  ),
+                                );
+                              }
                             },
                             style: TextButton.styleFrom(
                               padding: EdgeInsets.zero,
