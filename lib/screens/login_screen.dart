@@ -102,17 +102,14 @@ class _LoginScreenState extends State<LoginScreen>
                       ),
 
                       const SizedBox(height: 10),
-                      // Title
-                      // TANGGALIN ang 'const' dito.
+
                       Text(
                         "CampusThrift",
-                        // PALITAN ang TextStyle ng GoogleFonts.robotoSlab
                         style: GoogleFonts.robotoSlab(
                           fontSize: 30,
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
                           letterSpacing: 1,
-                          // Hindi na kailangan ang 'fontStyle' unless gusto mo ng italic.
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -145,7 +142,6 @@ class _LoginScreenState extends State<LoginScreen>
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Welcome Text
                             Text(
                               "Welcome Back!",
                               style: TextStyle(
@@ -268,12 +264,12 @@ class _LoginScreenState extends State<LoginScreen>
                                     },
                                     child: const Icon(
                                       Icons.lock_outline,
-                                      color: Colors.white, // IMPORTANT
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ),
 
-                                // 👁️ Show / Hide Password
+                                // Show / Hide Password
                                 suffixIcon: IconButton(
                                   icon: Icon(
                                     _obscurePassword
