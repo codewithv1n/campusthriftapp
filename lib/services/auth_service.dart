@@ -6,7 +6,7 @@ class AuthService {
   // Simple register function
   static bool register(User user) {
     if (_users.any((u) => u.email == user.email)) {
-      return false; // email already exists
+      return false;
     }
     _users.add(user);
     return true;
