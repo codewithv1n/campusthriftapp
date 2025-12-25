@@ -51,7 +51,6 @@ class _SignUpScreenState extends State<SignUpScreen>
         _isLoading = true;
       });
 
-      // Simulate signup delay
       await Future.delayed(const Duration(seconds: 2));
 
       if (mounted) {
@@ -60,7 +59,7 @@ class _SignUpScreenState extends State<SignUpScreen>
         });
 
         // Navigate back to login screen
-        Navigator.pop(context, true); // Pass true to indicate successful signup
+        Navigator.pop(context, true);
       }
     }
   }
