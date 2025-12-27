@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'home_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'signup_screen.dart';
+import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen>
     with SingleTickerProviderStateMixin {
-  final TextEditingController emailController = TextEditingController();
+  final TextEditingController studentIdController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _obscurePassword = true;
@@ -36,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   void dispose() {
     _animationController.dispose();
-    emailController.dispose();
+    studentIdController.dispose();
     passwordController.dispose();
     super.dispose();
   }
@@ -47,7 +48,6 @@ class _LoginScreenState extends State<LoginScreen>
         _isLoading = true;
       });
 
-      // Simulate login delay
       await Future.delayed(const Duration(seconds: 2));
 
       if (mounted) {
@@ -74,8 +74,12 @@ class _LoginScreenState extends State<LoginScreen>
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              const Color.fromARGB(255, 109, 202, 157),
-              const Color.fromARGB(255, 243, 230, 108)
+              const Color(0xFFFFF1B8), // creamy yellow :>
+              const Color(0xFF90C695) // soft green :>
+            ],
+            stops: const [
+              0.4, // blending ng kulay
+              0.6,
             ],
           ),
         ),
@@ -103,13 +107,27 @@ class _LoginScreenState extends State<LoginScreen>
 
                       const SizedBox(height: 10),
 
-                      Text(
-                        "CampusThrift",
-                        style: GoogleFonts.robotoSlab(
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                          letterSpacing: 1,
+                      RichText(
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: "Campus",
+                              style: GoogleFonts.poppins(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w600,
+                                color: const Color(0xFF90C695),
+                              ),
+                            ),
+                            TextSpan(
+                              text: "Thrift",
+                              style: GoogleFonts.poppins(
+                                fontSize: 28,
+                                fontWeight: FontWeight.w600,
+                                color: Color.fromARGB(255, 22, 24, 22),
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -161,18 +179,28 @@ class _LoginScreenState extends State<LoginScreen>
 
                             const SizedBox(height: 30),
 
-                            // Email Field
+                            // Student ID Field
                             TextFormField(
-                              controller: emailController,
-                              keyboardType: TextInputType.emailAddress,
+                              controller: studentIdController,
+                              keyboardType: TextInputType.text,
                               style: const TextStyle(fontSize: 16),
+                              cursorColor: Colors.blueGrey.shade600,
                               decoration: InputDecoration(
-                                labelText: "Email",
-                                hintText: "Enter your email",
+                                labelText: "Student ID",
+                                hintText: "Enter your student ID",
+                                labelStyle: TextStyle(
+                                  color: Colors.blueGrey.shade600,
+                                ),
+                                floatingLabelStyle: TextStyle(
+                                  color: Colors.blueGrey.shade600,
+                                ),
+                                hintStyle: TextStyle(
+                                  color: Colors.grey.shade500,
+                                ),
                                 prefixIcon: Container(
                                   margin: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.blueGrey.shade50,
+                                    color: Colors.black12,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: ShaderMask(
@@ -181,13 +209,14 @@ class _LoginScreenState extends State<LoginScreen>
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                         colors: [
-                                          Color.fromARGB(255, 109, 202, 157),
-                                          Color.fromARGB(255, 243, 230, 108),
+                                          Color(0xFFFFF1B8),
+                                          Color(0xFF90C695),
                                         ],
+                                        stops: [0.5, 0.5],
                                       ).createShader(bounds);
                                     },
                                     child: const Icon(
-                                      Icons.email_outlined,
+                                      Icons.badge_outlined,
                                       color: Colors.white,
                                     ),
                                   ),
@@ -211,14 +240,16 @@ class _LoginScreenState extends State<LoginScreen>
                                 errorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide(
-                                      color: Colors.blueGrey.shade600,
-                                      width: 2),
+                                    color: Colors.red.shade400,
+                                    width: 2,
+                                  ),
                                 ),
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide(
-                                      color: Colors.blueGrey.shade600,
-                                      width: 2),
+                                    color: Colors.red.shade400,
+                                    width: 2,
+                                  ),
                                 ),
                                 filled: true,
                                 fillColor: Colors.white,
@@ -226,15 +257,19 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                               validator: (value) {
                                 if (value == null || value.isEmpty) {
-                                  return 'Please enter your email';
+                                  return 'Please enter your student ID';
                                 }
-                                if (!value.contains('@')) {
-                                  return 'Please enter a valid email';
+
+                                value = value.trim();
+
+                                if (!RegExp(r'^s\d+$')
+                                    .hasMatch(value.toLowerCase())) {
+                                  return 'Please start with "s" followed by numbers';
                                 }
+
                                 return null;
                               },
                             ),
-
                             const SizedBox(height: 20),
 
                             // Password Field
@@ -242,13 +277,24 @@ class _LoginScreenState extends State<LoginScreen>
                               controller: passwordController,
                               obscureText: _obscurePassword,
                               style: const TextStyle(fontSize: 16),
+                              cursorColor: Colors.blueGrey.shade600,
                               decoration: InputDecoration(
                                 labelText: "Password",
                                 hintText: "Enter your password",
+                                labelStyle: TextStyle(
+                                  color: Colors.blueGrey.shade600,
+                                ),
+                                floatingLabelStyle: TextStyle(
+                                  color: Colors.blueGrey.shade600,
+                                ),
+                                hintStyle: TextStyle(
+                                  color: Colors.grey.shade500,
+                                ),
+
                                 prefixIcon: Container(
                                   margin: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: Colors.blueGrey.shade50,
+                                    color: Colors.black12,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: ShaderMask(
@@ -257,9 +303,10 @@ class _LoginScreenState extends State<LoginScreen>
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
                                         colors: [
-                                          Color.fromARGB(255, 109, 202, 157),
-                                          Color.fromARGB(255, 243, 230, 108),
+                                          Color(0xFFFFF1B8),
+                                          Color(0xFF90C695),
                                         ],
+                                        stops: [0.5, 0.5],
                                       ).createShader(bounds);
                                     },
                                     child: const Icon(
@@ -288,11 +335,13 @@ class _LoginScreenState extends State<LoginScreen>
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide.none,
                                 ),
+
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide:
                                       BorderSide(color: Colors.grey.shade900),
                                 ),
+
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
                                   borderSide: BorderSide(
@@ -300,16 +349,23 @@ class _LoginScreenState extends State<LoginScreen>
                                     width: 2,
                                   ),
                                 ),
+
                                 errorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                      color: Colors.blue, width: 2),
+                                  borderSide: BorderSide(
+                                    color: Colors.red.shade400,
+                                    width: 2,
+                                  ),
                                 ),
+
                                 focusedErrorBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(16),
-                                  borderSide: const BorderSide(
-                                      color: Colors.blue, width: 2),
+                                  borderSide: BorderSide(
+                                    color: Colors.red.shade400,
+                                    width: 2,
+                                  ),
                                 ),
+
                                 filled: true,
                                 fillColor: Colors.white,
                                 contentPadding: const EdgeInsets.all(16),
@@ -324,6 +380,7 @@ class _LoginScreenState extends State<LoginScreen>
                                 return null;
                               },
                             ),
+
                             const SizedBox(height: 16),
 
                             // Forgot Password
@@ -336,13 +393,16 @@ class _LoginScreenState extends State<LoginScreen>
                                       content: const Row(
                                         children: [
                                           Icon(Icons.info_outline,
-                                              color: Colors.white),
+                                              color: Colors.black),
                                           SizedBox(width: 12),
                                           Text(
-                                              'Password reset feature coming soon!'),
+                                            'Password reset feature coming soon!',
+                                            style:
+                                                TextStyle(color: Colors.black),
+                                          )
                                         ],
                                       ),
-                                      backgroundColor: Colors.blue,
+                                      backgroundColor: Colors.grey.shade400,
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(10),
@@ -360,32 +420,39 @@ class _LoginScreenState extends State<LoginScreen>
                               ),
                             ),
 
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 5),
 
                             // Login Button
                             SizedBox(
                               width: double.infinity,
-                              height: 56,
+                              height: 50,
                               child: ElevatedButton(
                                 onPressed: _isLoading ? null : _handleLogin,
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blueGrey.shade800,
-                                  foregroundColor: Colors
-                                      .white, // logim text sa loob ng button
-                                  elevation: 8,
+                                  backgroundColor: Colors.black87,
+                                  foregroundColor: Colors.white,
+                                  elevation: 5,
                                   shadowColor: Colors.grey.withOpacity(0.5),
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                  disabledBackgroundColor: Colors.grey[20],
+                                  disabledBackgroundColor: Colors.grey[400],
                                 ),
                                 child: _isLoading
-                                    ? const SizedBox(
-                                        height: 24,
-                                        width: 24,
-                                        child: CircularProgressIndicator(
-                                          color: Colors.blue,
-                                          strokeWidth: 2.5,
+                                    ? ShaderMask(
+                                        shaderCallback: (bounds) =>
+                                            LinearGradient(
+                                          colors: [
+                                            const Color(0xFFFFF1B8),
+                                            const Color(0xFF90C695),
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        ).createShader(bounds),
+                                        child: LoadingAnimationWidget
+                                            .threeRotatingDots(
+                                          color: Colors.white,
+                                          size: 30,
                                         ),
                                       )
                                     : const Text(
@@ -416,7 +483,6 @@ class _LoginScreenState extends State<LoginScreen>
                           ),
                           TextButton(
                             onPressed: () async {
-                              // Navigate to sign up screen and wait for result
                               final result = await Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -424,7 +490,6 @@ class _LoginScreenState extends State<LoginScreen>
                                 ),
                               );
 
-                              // Show green success notification if signup was successful
                               if (result == true && mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
