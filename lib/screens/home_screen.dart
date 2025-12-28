@@ -1,8 +1,7 @@
-// ignore_for_file: prefer_const_constructors
-
 import 'package:flutter/material.dart';
 import 'product_list_screen.dart';
 import 'sell_item_screen.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -16,9 +15,10 @@ class HomeScreen extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Colors.blue.shade50,
-              Colors.purple.shade50,
+              const Color(0xFFFFF1B8),
+              const Color(0xFF90C695),
             ],
+            stops: const [0.3, 1.0],
           ),
         ),
         child: SafeArea(
@@ -26,7 +26,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               // Header Section
               Padding(
-                padding: const EdgeInsets.all(24.0),
+                padding: const EdgeInsets.all(22.0),
                 child: Column(
                   children: [
                     Row(
@@ -35,41 +35,38 @@ class HomeScreen extends StatelessWidget {
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'CampusThrift',
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade900,
+                            RichText(
+                              text: TextSpan(
+                                children: [
+                                  TextSpan(
+                                    text: "Campus",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF90C695),
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: "Thrift",
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color.fromARGB(255, 22, 24, 22),
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                             Text(
                               'Buy & Sell on Campus',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey.shade600,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
                               ),
                             ),
                           ],
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.1),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Icon(
-                            Icons.shopping_bag_outlined,
-                            color: Colors.blue.shade700,
-                            size: 25,
-                          ),
                         ),
                       ],
                     ),
@@ -89,20 +86,22 @@ class HomeScreen extends StatelessWidget {
                         width: 180,
                         height: 180,
                         decoration: BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.withOpacity(0.2),
-                              blurRadius: 30,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          Icons.storefront_rounded,
-                          size: 90,
-                          color: Colors.blue.shade600,
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 10),
+                              ),
+                            ]),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'lib/assets/logo.png',
+                            width: 90,
+                            height: 90,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
 
