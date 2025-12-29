@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
 import 'product_list_screen.dart';
 import 'sell_item_screen.dart';
+import 'settings_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final Function(bool)? onThemeChanged;
+
+  const HomeScreen({super.key, this.onThemeChanged});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFFFFF1B8),
-              const Color(0xFF90C695),
-            ],
+            colors: isDark
+                ? [Colors.grey.shade900, Colors.grey.shade900]
+                : [const Color(0xFFFFF1B8), const Color(0xFF90C695)],
             stops: const [0.3, 1.0],
           ),
         ),
@@ -51,7 +55,10 @@ class HomeScreen extends StatelessWidget {
                                     style: GoogleFonts.poppins(
                                       fontSize: 28,
                                       fontWeight: FontWeight.w600,
-                                      color: Color.fromARGB(255, 22, 24, 22),
+                                      color: isDark
+                                          ? Colors.white
+                                          : const Color.fromARGB(
+                                              255, 22, 24, 22),
                                       fontStyle: FontStyle.italic,
                                     ),
                                   ),
@@ -63,7 +70,9 @@ class HomeScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
-                                color: Colors.black87,
+                                color: isDark
+                                    ? Colors.grey.shade400
+                                    : Colors.black87,
                               ),
                             ),
                           ],
@@ -86,11 +95,12 @@ class HomeScreen extends StatelessWidget {
                         width: 180,
                         height: 180,
                         decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isDark ? Colors.grey.shade800 : Colors.white,
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.grey.withOpacity(0.3),
+                                color: Colors.white
+                                    .withOpacity(isDark ? 0.5 : 0.3),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -112,7 +122,9 @@ class HomeScreen extends StatelessWidget {
                         'Welcome to Your',
                         style: TextStyle(
                           fontSize: 24,
-                          color: Colors.grey.shade700,
+                          color: isDark
+                              ? Colors.grey.shade200
+                              : Colors.grey.shade700,
                         ),
                       ),
                       Text(
@@ -120,22 +132,26 @@ class HomeScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue.shade900,
+                          color: isDark
+                              ? const Color(0xFF90C695)
+                              : Colors.grey.shade800,
                         ),
                       ),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 15),
 
                       Text(
                         'Find great deals or sell items you no longer need',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 16,
-                          color: Colors.grey.shade600,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade600,
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 20),
 
                       // Browse Button
                       _buildActionButton(
@@ -143,7 +159,7 @@ class HomeScreen extends StatelessWidget {
                         icon: Icons.search_rounded,
                         label: 'Buy Items',
                         description: 'Explore amazing deals',
-                        color: Colors.blue,
+                        color: isDark ? const Color(0xFF90C695) : Colors.black,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -154,7 +170,7 @@ class HomeScreen extends StatelessWidget {
                         },
                       ),
 
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 15),
 
                       // Sell Button
                       _buildActionButton(
@@ -162,7 +178,7 @@ class HomeScreen extends StatelessWidget {
                         icon: Icons.add_circle_outline_rounded,
                         label: 'Sell an Item',
                         description: 'List your item in seconds',
-                        color: Colors.blue,
+                        color: isDark ? const Color(0xFF90C695) : Colors.black,
                         onTap: () {
                           Navigator.push(
                             context,
@@ -180,16 +196,9 @@ class HomeScreen extends StatelessWidget {
               // Bottom Navigation
               Container(
                 padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 18),
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
+                  color: Colors.transparent,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -225,6 +234,7 @@ class HomeScreen extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -232,11 +242,11 @@ class HomeScreen extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: isDark ? Colors.grey.shade800 : Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.3),
+              color: color.withOpacity(isDark ? 0.1 : 0.3),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -266,7 +276,7 @@ class HomeScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: Colors.grey.shade900,
+                      color: isDark ? Colors.white : Colors.grey.shade900,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -274,7 +284,8 @@ class HomeScreen extends StatelessWidget {
                     description,
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey.shade600,
+                      color:
+                          isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                     ),
                   ),
                 ],
@@ -298,21 +309,34 @@ class HomeScreen extends StatelessWidget {
     required bool isActive,
     VoidCallback? onTap,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeGradient = isDark
+        ? const [const Color(0xFFFFF1B8), Color.fromARGB(255, 91, 209, 104)]
+        : [const Color(0xFFFFF1B8), Color.fromARGB(255, 91, 209, 104)];
+
     return InkWell(
       onTap: onTap ?? () {},
       borderRadius: BorderRadius.circular(12),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
         decoration: BoxDecoration(
-          color: isActive ? Colors.blue.shade600 : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
+          gradient: isActive
+              ? LinearGradient(
+                  colors: activeGradient,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  stops: const [0.4, 0.6],
+                )
+              : null,
+          color: isActive ? null : Colors.transparent,
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
-              color: isActive ? Colors.white : Colors.grey.shade600,
+              color: isActive ? Colors.white : Colors.white,
               size: 28,
             ),
             const SizedBox(height: 4),
@@ -321,7 +345,7 @@ class HomeScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: isActive ? Colors.white : Colors.grey.shade600,
+                color: isActive ? Colors.white : Colors.white,
               ),
             ),
           ],
@@ -331,13 +355,14 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _showProfileOptions(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey.shade900 : Colors.white,
+          borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
@@ -350,7 +375,7 @@ class HomeScreen extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -366,7 +391,9 @@ class HomeScreen extends StatelessWidget {
                     height: 60,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [Colors.blue.shade400, Colors.purple.shade400],
+                        colors: isDark
+                            ? [Colors.orange.shade400, Colors.red.shade400]
+                            : [Colors.blue.shade400, Colors.purple.shade400],
                       ),
                       shape: BoxShape.circle,
                     ),
@@ -385,14 +412,16 @@ class HomeScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey.shade900,
+                          color: isDark ? Colors.white : Colors.grey.shade900,
                         ),
                       ),
                       Text(
                         'student@campus.edu',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey.shade600,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade600,
                         ),
                       ),
                     ],
@@ -403,173 +432,118 @@ class HomeScreen extends StatelessWidget {
 
             const Divider(height: 1),
 
-            // Menu Options
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.shopping_bag_outlined,
-                    color: Colors.blue.shade600),
-              ),
-              title: const Text('My Listings'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            _buildBottomSheetTile(
+              context,
+              icon: Icons.shopping_bag_outlined,
+              label: 'My Listings',
+              color: Colors.blue,
+              onTap: () => _showComingSoon(context, 'My Listings'),
+            ),
+            _buildBottomSheetTile(
+              context,
+              icon: Icons.favorite_border,
+              label: 'Favorites',
+              color: Colors.purple,
+              onTap: () => _showComingSoon(context, 'Favorites'),
+            ),
+            _buildBottomSheetTile(
+              context,
+              icon: Icons.settings,
+              label: 'Settings',
+              color: Colors.orange,
               onTap: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.white),
-                        SizedBox(width: 12),
-                        Text('My Listings feature coming soon!'),
-                      ],
-                    ),
-                    backgroundColor: Colors.blue,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SettingsScreen(
+                      onThemeChanged: onThemeChanged,
                     ),
                   ),
                 );
               },
             ),
 
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.purple.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child:
-                    Icon(Icons.favorite_border, color: Colors.purple.shade600),
-              ),
-              title: const Text('Favorites'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+            Divider(
+                height: 1,
+                color: isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+
+            _buildBottomSheetTile(
+              context,
+              icon: Icons.logout,
+              label: 'Logout',
+              color: Colors.red,
               onTap: () {
                 Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.white),
-                        SizedBox(width: 12),
-                        Text('Favorites feature coming soon!'),
-                      ],
-                    ),
-                    backgroundColor: Colors.purple,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.settings, color: Colors.orange.shade600),
-              ),
-              title: const Text('Settings'),
-              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-              onTap: () {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Row(
-                      children: [
-                        Icon(Icons.info_outline, color: Colors.white),
-                        SizedBox(width: 12),
-                        Text('Settings feature coming soon!'),
-                      ],
-                    ),
-                    backgroundColor: Colors.orange,
-                    behavior: SnackBarBehavior.floating,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                );
-              },
-            ),
-
-            const Divider(height: 1),
-
-            // Logout Button
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.logout, color: Colors.red.shade600),
-              ),
-              title: Text(
-                'Logout',
-                style: TextStyle(
-                  color: Colors.red.shade600,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              onTap: () {
-                Navigator.pop(context);
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    title: const Row(
-                      children: [
-                        Icon(Icons.logout, color: Colors.red),
-                        SizedBox(width: 12),
-                        Text('Logout'),
-                      ],
-                    ),
-                    content: const Text('Are you sure you want to logout?'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: Text(
-                          'Cancel',
-                          style: TextStyle(color: Colors.grey.shade600),
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.pop(context);
-                          Navigator.pushReplacementNamed(context, '/login');
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                        child: Text(
-                          'Logout',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
+                _showLogoutDialog(context);
               },
             ),
 
             const SizedBox(height: 20),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildBottomSheetTile(BuildContext context,
+      {required IconData icon,
+      required String label,
+      required Color color,
+      required VoidCallback onTap}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return ListTile(
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, color: color),
+      ),
+      title: Text(label,
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87)),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+      onTap: onTap,
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child:
+                Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Replace with your actual logout logic
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Logout', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showComingSoon(BuildContext context, String feature) {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$feature feature coming soon!'),
+        behavior: SnackBarBehavior.floating,
       ),
     );
   }
