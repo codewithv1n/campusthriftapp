@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'product_list_screen.dart';
 import 'sell_item_screen.dart';
 import 'settings_screen.dart';
+import '../screens/favorites_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -84,6 +85,7 @@ class HomeScreen extends StatelessWidget {
               ),
 
               // Main Content
+
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -91,6 +93,7 @@ class HomeScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Hero Image/Icon
+
                       Container(
                         width: 180,
                         height: 180,
@@ -118,6 +121,7 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 40),
 
                       // Welcome Text
+
                       Text(
                         'Welcome to Your',
                         style: TextStyle(
@@ -127,6 +131,7 @@ class HomeScreen extends StatelessWidget {
                               : Colors.grey.shade700,
                         ),
                       ),
+
                       Text(
                         'Campus Marketplace',
                         style: TextStyle(
@@ -154,6 +159,7 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 20),
 
                       // Browse Button
+
                       _buildActionButton(
                         context,
                         icon: Icons.search_rounded,
@@ -173,6 +179,7 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 15),
 
                       // Sell Button
+
                       _buildActionButton(
                         context,
                         icon: Icons.add_circle_outline_rounded,
@@ -194,6 +201,7 @@ class HomeScreen extends StatelessWidget {
               ),
 
               // Bottom Navigation
+
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -235,6 +243,7 @@ class HomeScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -310,6 +319,7 @@ class HomeScreen extends StatelessWidget {
     VoidCallback? onTap,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     final activeGradient = isDark
         ? const [const Color(0xFFFFF1B8), Color.fromARGB(255, 91, 209, 104)]
         : [const Color(0xFFFFF1B8), Color.fromARGB(255, 91, 209, 104)];
@@ -356,6 +366,7 @@ class HomeScreen extends StatelessWidget {
 
   void _showProfileOptions(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -371,6 +382,7 @@ class HomeScreen extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 12),
+
             Container(
               width: 40,
               height: 4,
@@ -379,9 +391,11 @@ class HomeScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
+
             const SizedBox(height: 20),
 
             // Profile Header
+
             Container(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -439,13 +453,22 @@ class HomeScreen extends StatelessWidget {
               color: Colors.blue,
               onTap: () => _showComingSoon(context, 'My Listings'),
             ),
+
             _buildBottomSheetTile(
               context,
               icon: Icons.favorite_border,
               label: 'Favorites',
               color: Colors.purple,
-              onTap: () => _showComingSoon(context, 'Favorites'),
+              onTap: () {
+                Navigator.pop(context); // Close sheet
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            const FavoritesScreen())); // Go to Favorites
+              },
             ),
+
             _buildBottomSheetTile(
               context,
               icon: Icons.settings,
@@ -453,6 +476,7 @@ class HomeScreen extends StatelessWidget {
               color: Colors.orange,
               onTap: () {
                 Navigator.pop(context);
+
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -475,6 +499,7 @@ class HomeScreen extends StatelessWidget {
               color: Colors.red,
               onTap: () {
                 Navigator.pop(context);
+
                 _showLogoutDialog(context);
               },
             ),
@@ -492,6 +517,7 @@ class HomeScreen extends StatelessWidget {
       required Color color,
       required VoidCallback onTap}) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ListTile(
       leading: Container(
         padding: const EdgeInsets.all(8),
@@ -524,6 +550,7 @@ class HomeScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
+
               // Replace with your actual logout logic
             },
             style: ElevatedButton.styleFrom(
@@ -540,6 +567,7 @@ class HomeScreen extends StatelessWidget {
 
   void _showComingSoon(BuildContext context, String feature) {
     Navigator.pop(context);
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('$feature feature coming soon!'),
