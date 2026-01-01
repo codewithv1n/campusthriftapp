@@ -74,7 +74,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
+                color: isDark ? Colors.grey.shade900 : Colors.grey.shade300,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -129,7 +129,6 @@ class _SellItemScreenState extends State<SellItemScreen> {
     );
   }
 
-  // Ginawa nating hiwalay ang logic ng pag-save para malinis tingnan
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       if (selectedImages.isEmpty) {
@@ -143,15 +142,13 @@ class _SellItemScreenState extends State<SellItemScreen> {
         return;
       }
 
-      // 1. I-convert ang List<File> sa List<String> (image paths)
       List<String> paths = selectedImages.map((file) => file.path).toList();
 
-      // 2. Gawin ang Product object base sa iyong Model
       Product newProduct = Product(
         name: nameController.text,
         price: double.tryParse(priceController.text) ?? 0.0,
         description: descriptionController.text,
-        imagePaths: paths, // Ito ang kailangan ng model mo
+        imagePaths: paths,
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -162,7 +159,6 @@ class _SellItemScreenState extends State<SellItemScreen> {
         ),
       );
 
-      // I-return ang product sa naunang screen
       Navigator.pop(context, newProduct);
     }
   }
@@ -177,7 +173,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        foregroundColor: isDark ? Colors.white : Colors.grey.shade800,
+        foregroundColor: isDark ? Colors.white : Colors.black87,
         title: const Text(
           'Sell an Item',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -210,7 +206,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(isDark ? 0.05 : 0.2),
+                        color: const Color(0xFF90C695),
                         borderRadius: BorderRadius.circular(20),
                         border:
                             Border.all(color: Colors.white.withOpacity(0.1)),
@@ -251,7 +247,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
 
                     _buildSectionTitle('Photos', isDark),
                     const SizedBox(height: 12),
@@ -273,7 +269,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                               onTap: _showImageSourceDialog,
                               borderRadius: BorderRadius.circular(12),
                               child: Container(
-                                height: 160,
+                                height: 80,
                                 decoration: BoxDecoration(
                                   border: Border.all(
                                       color: Colors.white.withOpacity(0.5),
@@ -285,17 +281,17 @@ class _SellItemScreenState extends State<SellItemScreen> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(Icons.add_photo_alternate_outlined,
-                                          size: 48,
+                                          size: 30,
                                           color: isDark
                                               ? Colors.white70
-                                              : Colors.blue.shade700),
+                                              : Colors.grey.shade800),
                                       const SizedBox(height: 8),
                                       Text('Add Photos',
                                           style: TextStyle(
                                               fontWeight: FontWeight.bold,
                                               color: isDark
                                                   ? Colors.white70
-                                                  : Colors.blue.shade700)),
+                                                  : Colors.grey.shade800)),
                                     ],
                                   ),
                                 ),
@@ -307,7 +303,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
 
                     _buildSectionTitle('Item Details', isDark),
                     const SizedBox(height: 12),
@@ -357,27 +353,27 @@ class _SellItemScreenState extends State<SellItemScreen> {
                           : null,
                     ),
 
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
 
                     // Post Button
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed:
-                            _submitForm, // Tinatawag ang submission logic
+                        onPressed: _submitForm,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF5A8F60),
-                          foregroundColor: Colors.white,
+                          backgroundColor: Color(0xFFFFF1B8).withOpacity(0.9),
+                          foregroundColor:
+                              const Color.fromARGB(255, 78, 160, 86),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                              borderRadius: BorderRadius.circular(8)),
                         ),
                         child: const Text('Post Item',
                             style: TextStyle(
                                 fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 20),
                   ],
                 ),
               ),
