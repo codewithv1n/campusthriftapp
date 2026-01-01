@@ -336,7 +336,7 @@ class HomeScreen extends StatelessWidget {
                   colors: activeGradient,
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  stops: const [0.4, 0.6],
+                  stops: const [0.3, 1.0],
                 )
               : null,
           color: isActive ? null : Colors.transparent,
@@ -395,7 +395,6 @@ class HomeScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             // Profile Header
-
             Container(
               padding: const EdgeInsets.all(20),
               child: Row(
@@ -407,7 +406,10 @@ class HomeScreen extends StatelessWidget {
                       gradient: LinearGradient(
                         colors: isDark
                             ? [Colors.orange.shade400, Colors.red.shade400]
-                            : [Colors.blue.shade400, Colors.purple.shade400],
+                            : [
+                                const Color(0xFFFFF1B8),
+                                const Color(0xFF90C695)
+                              ],
                       ),
                       shape: BoxShape.circle,
                     ),
@@ -460,12 +462,11 @@ class HomeScreen extends StatelessWidget {
               label: 'Favorites',
               color: Colors.purple,
               onTap: () {
-                Navigator.pop(context); // Close sheet
+                Navigator.pop(context);
                 Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) =>
-                            const FavoritesScreen())); // Go to Favorites
+                        builder: (context) => const FavoritesScreen()));
               },
             ),
 
@@ -535,28 +536,28 @@ class HomeScreen extends StatelessWidget {
   }
 
   void _showLogoutDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
         title: const Text('Logout'),
         content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child:
-                Text('Cancel', style: TextStyle(color: Colors.grey.shade600)),
+            child: Text('Cancel',
+                style:
+                    TextStyle(color: isDark ? Colors.white : Colors.black87)),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-
-              // Replace with your actual logout logic
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                  borderRadius: BorderRadius.circular(5)),
             ),
             child: const Text('Logout', style: TextStyle(color: Colors.white)),
           ),
