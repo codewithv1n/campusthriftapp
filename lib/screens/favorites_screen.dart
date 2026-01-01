@@ -26,7 +26,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
-        foregroundColor: isDark ? Colors.white : Colors.blue.shade900,
+        foregroundColor: isDark ? Colors.white : Colors.black87,
       ),
       body: Container(
         width: double.infinity,
@@ -119,14 +119,14 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.favorite_border,
-              size: 80, color: isDark ? Colors.white24 : Colors.grey.shade400),
+              size: 80, color: isDark ? Colors.white24 : Colors.black87),
           const SizedBox(height: 16),
           Text(
             'No favorites yet!',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white70 : Colors.grey.shade600,
+              color: isDark ? Colors.white70 : Colors.grey.shade700,
             ),
           ),
         ],
