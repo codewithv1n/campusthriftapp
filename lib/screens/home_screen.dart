@@ -4,6 +4,7 @@ import 'sell_item_screen.dart';
 import 'settings_screen.dart';
 import '../screens/favorites_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'sell_listing_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final Function(bool)? onThemeChanged;
@@ -110,9 +111,9 @@ class HomeScreen extends StatelessWidget {
                             ]),
                         child: ClipOval(
                           child: Image.asset(
-                            'lib/assets/logo.png',
-                            width: 90,
-                            height: 90,
+                            'lib/assets/images/logo.png',
+                            width: 80,
+                            height: 80,
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -186,13 +187,25 @@ class HomeScreen extends StatelessWidget {
                         label: 'Sell an Item',
                         description: 'List your item in seconds',
                         color: isDark ? const Color(0xFF90C695) : Colors.black,
-                        onTap: () {
-                          Navigator.push(
+                        onTap: () async {
+                          // 1. Hintayin ang product galing sa form
+                          final newProduct = await Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const SellItemScreen(),
-                            ),
+                                builder: (context) => const SellItemScreen()),
                           );
+
+                          // 2. Pagbalik dito sa Home, i-save ang product sa GLOBAL list
+                          if (newProduct != null) {
+                            myItems.add(
+                                newProduct); // Dito siya mase-save permanently habang open ang app
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content:
+                                      Text('Item added to My Sell Items!')),
+                            );
+                          }
                         },
                       ),
                     ],
@@ -451,9 +464,17 @@ class HomeScreen extends StatelessWidget {
             _buildBottomSheetTile(
               context,
               icon: Icons.shopping_bag_outlined,
-              label: 'My Listings',
+              label: 'My Sell Items',
               color: Colors.blue,
-              onTap: () => _showComingSoon(context, 'My Listings'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SellItemsPage(),
+                  ),
+                );
+              },
             ),
 
             _buildBottomSheetTile(
