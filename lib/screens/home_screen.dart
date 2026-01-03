@@ -460,7 +460,7 @@ class HomeScreen extends StatelessWidget {
               context,
               icon: Icons.favorite_border,
               label: 'Favorites',
-              color: Colors.purple,
+              color: Colors.red,
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
