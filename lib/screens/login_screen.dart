@@ -101,7 +101,8 @@ class _LoginScreenState extends State<LoginScreen>
                         ),
                         child: CircleAvatar(
                           radius: 50,
-                          backgroundImage: AssetImage('lib/assets/logo.png'),
+                          backgroundImage:
+                              AssetImage('lib/assets/images/logo.png'),
                         ),
                       ),
 
