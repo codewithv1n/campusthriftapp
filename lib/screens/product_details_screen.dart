@@ -48,7 +48,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
                 child: IconButton(
                   icon: Icon(Icons.arrow_back,
-                      color: isDark ? Colors.white : Colors.blue.shade900),
+                      color: isDark ? Colors.white : Colors.black87),
                   onPressed: () => Navigator.pop(context),
                 ),
               ),
@@ -64,7 +64,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       isFavorite ? Icons.favorite : Icons.favorite_border,
                       color: isFavorite
                           ? Colors.red
-                          : (isDark ? Colors.white : Colors.blue.shade900),
+                          : (isDark ? Colors.white : Colors.black87),
                     ),
                     onPressed: () {
                       setState(() {
@@ -99,13 +99,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              Colors.blue.shade400,
-                              Colors.purple.shade400
+                              const Color(0xFFFFF1B8),
+                              const Color(0xFF90C695)
                             ],
                           ),
                         ),
                         child: const Icon(Icons.shopping_bag_outlined,
-                            size: 120, color: Colors.white70),
+                            size: 120, color: Colors.white54),
                       ),
               ),
             ),
@@ -113,13 +113,10 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
             // Content Section
             SliverToBoxAdapter(
               child: Container(
-                margin: const EdgeInsets.only(top: 10),
                 decoration: BoxDecoration(
                   color: isDark
                       ? Colors.grey.shade900.withOpacity(0.8)
                       : Colors.white,
-                  borderRadius:
-                      const BorderRadius.vertical(top: Radius.circular(30)),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(24.0),
@@ -276,7 +273,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       children: [
         Expanded(
           child: SizedBox(
-            height: 60,
+            height: 55,
             child: OutlinedButton(
               onPressed: () {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -288,10 +285,13 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: Colors.blue.shade600, width: 2),
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Chat Seller',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              child: Icon(
+                Icons.chat_bubble_outline,
+                color: Colors.blue.shade600,
+                size: 30,
+              ),
             ),
           ),
         ),
@@ -299,14 +299,14 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         Expanded(
           flex: 2,
           child: SizedBox(
-            height: 60,
+            height: 55,
             child: ElevatedButton(
               onPressed: () => _showPurchaseDialog(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF5A8F60),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16)),
+                    borderRadius: BorderRadius.circular(12)),
               ),
               child: const Text('Buy Now',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -318,22 +318,51 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   void _showPurchaseDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Confirm Purchase'),
+        backgroundColor: isDark ? Colors.grey.shade900 : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        title: Text(
+          'Confirm Purchase',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: isDark ? Colors.white : Colors.black,
+          ),
+        ),
         content: Text(
-            'Purchase ${widget.product.name} for ₱${widget.product.price}?'),
+          'Purchase ${widget.product.name} for ₱${widget.product.price}?',
+          style: TextStyle(
+            color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+          ),
+        ),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel')),
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.black87),
+            ),
+          ),
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                  content: Text('Order Sent!'), backgroundColor: Colors.green));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Order Sent!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5A8F60),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             child: const Text('Confirm'),
           ),
         ],
