@@ -1,6 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
+
 import 'package:image_picker/image_picker.dart';
+
 import '../models/product.dart';
 
 class SellItemScreen extends StatefulWidget {
@@ -12,9 +15,13 @@ class SellItemScreen extends StatefulWidget {
 
 class _SellItemScreenState extends State<SellItemScreen> {
   final TextEditingController nameController = TextEditingController();
+
   final TextEditingController priceController = TextEditingController();
+
   final TextEditingController descriptionController = TextEditingController();
+
   final _formKey = GlobalKey<FormState>();
+
   final ImagePicker _picker = ImagePicker();
 
   List<File> selectedImages = [];
@@ -22,8 +29,11 @@ class _SellItemScreenState extends State<SellItemScreen> {
   @override
   void dispose() {
     nameController.dispose();
+
     priceController.dispose();
+
     descriptionController.dispose();
+
     super.dispose();
   }
 
@@ -59,6 +69,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
 
   void _showImageSourceDialog() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: isDark ? Colors.grey.shade900 : Colors.white,
@@ -102,6 +113,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                       TextStyle(color: isDark ? Colors.white : Colors.black)),
               onTap: () {
                 Navigator.pop(context);
+
                 _pickImage(ImageSource.camera);
               },
             ),
@@ -119,6 +131,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                       TextStyle(color: isDark ? Colors.white : Colors.black)),
               onTap: () {
                 Navigator.pop(context);
+
                 _pickImage(ImageSource.gallery);
               },
             ),
@@ -131,32 +144,11 @@ class _SellItemScreenState extends State<SellItemScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      if (selectedImages.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please add at least one photo'),
-            backgroundColor: Colors.orange,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        return;
-      }
-
-      List<String> paths = selectedImages.map((file) => file.path).toList();
-
-      Product newProduct = Product(
+      final newProduct = Product(
         name: nameController.text,
         price: double.tryParse(priceController.text) ?? 0.0,
         description: descriptionController.text,
-        imagePaths: paths,
-      );
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Item posted successfully!'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
-        ),
+        imagePaths: selectedImages.map((file) => file.path).toList(),
       );
 
       Navigator.pop(context, newProduct);
@@ -203,6 +195,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header Card
+
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -250,6 +243,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                     const SizedBox(height: 20),
 
                     _buildSectionTitle('Photos', isDark),
+
                     const SizedBox(height: 12),
 
                     Container(
@@ -306,6 +300,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                     const SizedBox(height: 20),
 
                     _buildSectionTitle('Item Details', isDark),
+
                     const SizedBox(height: 12),
 
                     _buildTextField(
@@ -333,8 +328,10 @@ class _SellItemScreenState extends State<SellItemScreen> {
                       validator: (value) {
                         if (value == null || value.isEmpty)
                           return 'Please enter price';
+
                         if (double.tryParse(value) == null)
                           return 'Enter a valid number';
+
                         return null;
                       },
                     ),
@@ -356,6 +353,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                     const SizedBox(height: 20),
 
                     // Post Button
+
                     SizedBox(
                       width: double.infinity,
                       height: 56,
@@ -373,6 +371,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                                 fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
                     ),
+
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -408,6 +407,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
             ),
           );
         }
+
         return Stack(
           children: [
             Container(
