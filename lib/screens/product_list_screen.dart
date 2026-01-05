@@ -59,7 +59,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.transparent,
-        foregroundColor: isDark ? Colors.white : Colors.blue.shade900,
+        foregroundColor: isDark ? Colors.white : Colors.black87,
         title: const Text(
           'Available Items',
           style: TextStyle(fontWeight: FontWeight.bold),
