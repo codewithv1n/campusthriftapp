@@ -122,7 +122,6 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 40),
 
                       // Welcome Text
-
                       Text(
                         'Welcome to Your',
                         style: TextStyle(
@@ -160,7 +159,6 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 20),
 
                       // Browse Button
-
                       _buildActionButton(
                         context,
                         icon: Icons.search_rounded,
@@ -180,7 +178,6 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 15),
 
                       // Sell Button
-
                       _buildActionButton(
                         context,
                         icon: Icons.add_circle_outline_rounded,
@@ -188,17 +185,14 @@ class HomeScreen extends StatelessWidget {
                         description: 'List your item in seconds',
                         color: isDark ? const Color(0xFF90C695) : Colors.black,
                         onTap: () async {
-                          // 1. Hintayin ang product galing sa form
                           final newProduct = await Navigator.push(
                             context,
                             MaterialPageRoute(
                                 builder: (context) => const SellItemScreen()),
                           );
 
-                          // 2. Pagbalik dito sa Home, i-save ang product sa GLOBAL list
                           if (newProduct != null) {
-                            myItems.add(
-                                newProduct); // Dito siya mase-save permanently habang open ang app
+                            myItems.add(newProduct);
 
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -214,7 +208,6 @@ class HomeScreen extends StatelessWidget {
               ),
 
               // Bottom Navigation
-
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
