@@ -5,6 +5,7 @@ import 'settings_screen.dart';
 import '../screens/favorites_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'sell_listing_screen.dart';
+import 'orders_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final Function(bool)? onThemeChanged;
@@ -518,7 +519,21 @@ class HomeScreen extends StatelessWidget {
             ),
 
             const Divider(height: 1),
-
+            _buildBottomSheetTile(
+              context,
+              icon: Icons.receipt_long_outlined,
+              label: 'My Orders',
+              color: Colors.orange,
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MyOrdersPage(),
+                  ),
+                );
+              },
+            ),
             _buildBottomSheetTile(
               context,
               icon: Icons.shopping_bag_outlined,
