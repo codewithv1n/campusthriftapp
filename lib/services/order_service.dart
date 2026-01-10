@@ -8,7 +8,7 @@ class OrdersService {
   }
 
   static void addOrder(Order order) {
-    _orders.insert(0, order); // Add sa pinakataas
+    _orders.insert(0, order);
   }
 
   static void updateOrderStatus(String orderId, String newStatus) {
