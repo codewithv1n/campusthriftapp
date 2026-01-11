@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/product.dart';
 import '../services/favorites_service.dart';
+import '../screens/checkout_screen.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final Product product;
@@ -18,7 +19,6 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   @override
   void initState() {
     super.initState();
-    // I-check kung favorite na ba ang product sa simula
     isFavorite = FavoritesService.isProductFavorite(widget.product);
   }
 
@@ -33,7 +33,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         color: isDark ? Colors.black : Colors.blueGrey.shade50,
         child: CustomScrollView(
           slivers: [
-            // AppBar with Image
+            /// APP BAR
             SliverAppBar(
               expandedHeight: 300,
               pinned: true,
@@ -71,6 +71,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         isFavorite = !isFavorite;
                         FavoritesService.toggleFavorite(widget.product);
                       });
+
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(isFavorite
@@ -96,80 +97,77 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         },
                       )
                     : Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              const Color(0xFFFFF1B8),
-                              const Color(0xFF90C695)
+                              Color(0xFFFFF1B8),
+                              Color(0xFF90C695),
                             ],
                           ),
                         ),
-                        child: const Icon(Icons.shopping_bag_outlined,
-                            size: 120, color: Colors.white54),
+                        child: const Icon(
+                          Icons.shopping_bag_outlined,
+                          size: 120,
+                          color: Colors.white54,
+                        ),
                       ),
               ),
             ),
 
-            // Content Section
+            /// CONTENT
             SliverToBoxAdapter(
               child: Container(
-                decoration: BoxDecoration(
-                  color: isDark
-                      ? Colors.grey.shade900.withOpacity(0.8)
-                      : Colors.white,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              widget.product.name,
-                              style: TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.bold,
-                                color: isDark
-                                    ? Colors.white
-                                    : Colors.grey.shade900,
-                              ),
+                color: isDark
+                    ? Colors.grey.shade900.withOpacity(0.8)
+                    : Colors.white,
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.product.name,
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color:
+                                  isDark ? Colors.white : Colors.grey.shade900,
                             ),
                           ),
-                          _buildStatusBadge(),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      _buildPriceCard(isDark),
-                      const SizedBox(height: 30),
-                      Text(
-                        'Description',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.grey.shade900,
                         ),
+                        _buildStatusBadge(),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _buildPriceCard(isDark),
+                    const SizedBox(height: 30),
+                    Text(
+                      'Description',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.grey.shade900,
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        widget.product.description,
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: isDark
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade700,
-                          height: 1.6,
-                        ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.product.description,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: isDark
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade700,
+                        height: 1.6,
                       ),
-                      const SizedBox(height: 30),
-                      _buildSellerInfo(isDark),
-                      const SizedBox(height: 30),
-                      _buildActionButtons(context, isDark),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(height: 30),
+                    _buildSellerInfo(isDark),
+                    const SizedBox(height: 30),
+                    _buildActionButtons(context),
+                    const SizedBox(height: 40),
+                  ],
                 ),
               ),
             ),
@@ -179,6 +177,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
+  /// STATUS
   Widget _buildStatusBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -188,19 +187,23 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         border: Border.all(color: Colors.green.shade200),
       ),
       child: Row(
-        children: [
-          Icon(Icons.verified, size: 14, color: Colors.green.shade700),
-          const SizedBox(width: 4),
-          const Text('Available',
-              style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green)),
+        children: const [
+          Icon(Icons.verified, size: 14, color: Colors.green),
+          SizedBox(width: 4),
+          Text(
+            'Available',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.green,
+            ),
+          ),
         ],
       ),
     );
   }
 
+  /// PRICE
   Widget _buildPriceCard(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -216,17 +219,21 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Asking Price',
-                  style: TextStyle(
-                      fontSize: 12,
-                      color: isDark
-                          ? Colors.grey.shade400
-                          : Colors.green.shade700)),
-              Text('₱${widget.product.price}',
-                  style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade600)),
+              Text(
+                'Asking Price',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey.shade400 : Colors.green.shade700,
+                ),
+              ),
+              Text(
+                '₱${widget.product.price}',
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green.shade600,
+                ),
+              ),
             ],
           ),
         ],
@@ -234,6 +241,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
+  /// SELLER INFO (NO CHAT)
   Widget _buildSellerInfo(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -242,130 +250,52 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Row(
-        children: [
-          const CircleAvatar(
-              radius: 25,
-              backgroundColor: Colors.blue,
-              child: Icon(Icons.person, color: Colors.white)),
-          const SizedBox(width: 16),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Seller',
-                    style: TextStyle(fontSize: 12, color: Colors.blue)),
-                Text('Campus Student',
-                    style:
-                        TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ],
-            ),
+        children: const [
+          CircleAvatar(
+            radius: 25,
+            backgroundColor: Colors.blue,
+            child: Icon(Icons.person, color: Colors.white),
           ),
-          IconButton(
-              onPressed: () {},
-              icon: const Icon(Icons.chat_bubble_outline, color: Colors.blue)),
+          SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Seller',
+                  style: TextStyle(fontSize: 12, color: Colors.blue)),
+              Text('Campus Student',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, bool isDark) {
-    return Row(
-      children: [
-        Expanded(
-          child: SizedBox(
-            height: 55,
-            child: OutlinedButton(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                      content: Text('Chat started!'),
-                      behavior: SnackBarBehavior.floating),
-                );
-              },
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.blue.shade600, width: 2),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: Icon(
-                Icons.chat_bubble_outline,
-                color: Colors.blue.shade600,
-                size: 30,
-              ),
-            ),
-          ),
+  Widget _buildActionButtons(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 55,
+      child: ElevatedButton(
+        onPressed: () => _showPurchaseDialog(context),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF5A8F60),
+          foregroundColor: Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          flex: 2,
-          child: SizedBox(
-            height: 55,
-            child: ElevatedButton(
-              onPressed: () => _showPurchaseDialog(context),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF5A8F60),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Buy Now',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            ),
-          ),
+        child: const Text(
+          'Buy Now',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
-      ],
+      ),
     );
   }
 
   void _showPurchaseDialog(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDark ? Colors.grey.shade900 : Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        title: Text(
-          'Confirm Purchase',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black,
-          ),
-        ),
-        content: Text(
-          'Purchase ${widget.product.name} for ₱${widget.product.price}?',
-          style: TextStyle(
-            color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(color: Colors.black87),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Order Sent!'),
-                  backgroundColor: Colors.green,
-                ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF5A8F60),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Confirm'),
-          ),
-        ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CheckoutScreen(product: widget.product),
       ),
     );
   }
