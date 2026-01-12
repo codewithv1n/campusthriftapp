@@ -6,6 +6,7 @@ import '../screens/favorites_screen.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'sell_listing_screen.dart';
 import 'orders_screen.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final Function(bool)? onThemeChanged;
@@ -647,6 +648,12 @@ class HomeScreen extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
+
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+                (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -656,17 +663,6 @@ class HomeScreen extends StatelessWidget {
             child: const Text('Logout', style: TextStyle(color: Colors.white)),
           ),
         ],
-      ),
-    );
-  }
-
-  void _showComingSoon(BuildContext context, String feature) {
-    Navigator.pop(context);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature feature coming soon!'),
-        behavior: SnackBarBehavior.floating,
       ),
     );
   }
