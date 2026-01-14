@@ -5,7 +5,9 @@ import 'signup_screen.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final Function(bool)? onThemeChanged;
+
+  const LoginScreen({super.key, this.onThemeChanged});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -58,7 +60,9 @@ class _LoginScreenState extends State<LoginScreen>
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => const HomeScreen(),
+            builder: (context) => HomeScreen(
+              onThemeChanged: widget.onThemeChanged,
+            ),
           ),
         );
       }
