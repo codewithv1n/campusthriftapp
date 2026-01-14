@@ -21,64 +21,69 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     final filteredOrders = _selectedFilter == 'all'
         ? orders
         : orders.where((order) => order.status == _selectedFilter).toList();
-
-    return Scaffold(
-      backgroundColor: isDark ? Colors.black : Colors.blueGrey.shade50,
-      appBar: AppBar(
-        title: const Text(
-          'My Orders',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isDark
-                  ? [Colors.grey.shade800, Colors.grey.shade900]
-                  : [const Color(0xFFFFF1B8), const Color(0xFF90C695)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Column(
-        children: [
-          // Filter Chips
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  _buildFilterChip('All', 'all', isDark),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Pending', 'pending', isDark),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Confirmed', 'confirmed', isDark),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Completed', 'completed', isDark),
-                  const SizedBox(width: 8),
-                  _buildFilterChip('Cancelled', 'cancelled', isDark),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: isDark
+              ? [
+                  Colors.black,
+                  Colors.grey.shade900,
+                ]
+              : [
+                  const Color(0xFFFFF1B8),
+                  const Color(0xFF90C695),
                 ],
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text(
+            'My Orders',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: Column(
+          children: [
+            // Filter Chips
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildFilterChip('All', 'all', isDark),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Pending', 'pending', isDark),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Confirmed', 'confirmed', isDark),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Completed', 'completed', isDark),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Cancelled', 'cancelled', isDark),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // Orders List
-          Expanded(
-            child: filteredOrders.isEmpty
-                ? _buildEmptyState(isDark)
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: filteredOrders.length,
-                    itemBuilder: (context, index) {
-                      return _buildOrderCard(filteredOrders[index], isDark);
-                    },
-                  ),
-          ),
-        ],
+            // Orders List
+            Expanded(
+              child: filteredOrders.isEmpty
+                  ? _buildEmptyState(isDark)
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: filteredOrders.length,
+                      itemBuilder: (context, index) {
+                        return _buildOrderCard(filteredOrders[index], isDark);
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -135,7 +140,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
             'Your orders will appear here',
             style: TextStyle(
               fontSize: 14,
-              color: isDark ? Colors.grey.shade500 : Colors.grey.shade500,
+              color: isDark ? Colors.grey.shade500 : Colors.black87,
             ),
           ),
         ],
