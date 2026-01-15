@@ -388,7 +388,7 @@ class HomeScreen extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
 
     final activeGradient = isDark
-        ? const [const Color(0xFFFFF1B8), Color.fromARGB(255, 91, 209, 104)]
+        ? [const Color(0xFFFFF1B8), Color.fromARGB(255, 91, 209, 104)]
         : [const Color(0xFFFFF1B8), Color.fromARGB(255, 91, 209, 104)];
 
     return InkWell(
@@ -651,7 +651,11 @@ class HomeScreen extends StatelessWidget {
 
               Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => LoginScreen()),
+                MaterialPageRoute(
+                  builder: (context) => LoginScreen(
+                    onThemeChanged: onThemeChanged,
+                  ),
+                ),
                 (route) => false,
               );
             },
