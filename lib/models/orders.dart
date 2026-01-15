@@ -8,7 +8,7 @@ class Order {
   final String meetupLocation;
   final String? notes;
   final DateTime orderDate;
-  final String status; // 'pending', 'confirmed', 'completed', 'cancelled'
+  final String status;
 
   Order({
     required this.id,
