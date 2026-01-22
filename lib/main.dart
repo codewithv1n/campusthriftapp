@@ -1,7 +1,13 @@
-import 'package:campus_thrift/screens/home_screen.dart';
+import 'package:campus_thrift/screens/login_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const CampusThriftApp());
 }
 
@@ -27,48 +33,19 @@ class _CampusThriftAppState extends State<CampusThriftApp> {
       debugShowCheckedModeBanner: false,
       title: 'CampusThrift',
       themeMode: _themeMode,
-
-      // Light Theme
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
         colorSchemeSeed: Colors.orange,
-        scaffoldBackgroundColor: Colors.grey.shade50,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
-          elevation: 0,
-          centerTitle: true,
-        ),
-        cardTheme: const CardThemeData(
-          color: Colors.white,
-          elevation: 1,
-        ),
       ),
-
-      // Dark Theme
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
         colorSchemeSeed: Colors.orange,
-        scaffoldBackgroundColor: Colors.grey.shade900,
-        appBarTheme: AppBarTheme(
-          backgroundColor: Colors.grey.shade800,
-          foregroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: true,
-        ),
-        cardTheme: CardThemeData(
-          color: Colors.grey.shade800,
-          elevation: 2,
-        ),
       ),
-
-      home: HomeScreen(onThemeChanged: _toggleTheme),
-
-      routes: {
-        '/home': (context) => HomeScreen(onThemeChanged: _toggleTheme),
-      },
+      home: LoginScreen(
+        onThemeChanged: _toggleTheme,
+      ),
     );
   }
 }
