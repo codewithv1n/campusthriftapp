@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Function(bool)? onThemeChanged;
@@ -19,6 +20,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _darkModeEnabled = Theme.of(context).brightness == Brightness.dark;
+  }
+
+  Future<void> _toggleDarkMode(bool value) async {
+    setState(() => _darkModeEnabled = value);
+
+    // Save to SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isDarkMode', value);
+
+    // Call the theme change callback
+    widget.onThemeChanged?.call(value);
   }
 
   @override
@@ -144,10 +156,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               title: 'Dark Mode',
                               subtitle: 'Switch to dark theme',
                               value: _darkModeEnabled,
-                              onChanged: (value) {
-                                setState(() => _darkModeEnabled = value);
-                                widget.onThemeChanged?.call(value);
-                              },
+                              onChanged: _toggleDarkMode,
                             ),
                             const Divider(height: 1),
                             _buildSettingsTile(
