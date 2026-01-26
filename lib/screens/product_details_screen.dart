@@ -1,30 +1,83 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import '../models/product.dart';
-import '../services/favorites_service.dart';
-import '../screens/checkout_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
-  final Product product;
+  final String productId;
+  final Map<String, dynamic> product;
 
-  const ProductDetailsScreen({super.key, required this.product});
+  const ProductDetailsScreen({
+    super.key,
+    required this.productId,
+    required this.product,
+  });
 
   @override
   State<ProductDetailsScreen> createState() => _ProductDetailsScreenState();
 }
 
 class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
-  late bool isFavorite;
+  bool isFavorite = false;
+  bool _isLoadingFavorite = true;
 
   @override
   void initState() {
     super.initState();
-    isFavorite = FavoritesService.isProductFavorite(widget.product);
+    _loadFavoriteStatus();
+  }
+
+  // Load favorite status from SharedPreferences
+  Future<void> _loadFavoriteStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    final favorites = prefs.getStringList('favorites') ?? [];
+    setState(() {
+      isFavorite = favorites.contains(widget.productId);
+      _isLoadingFavorite = false;
+    });
+  }
+
+  // Toggle favorite and save to SharedPreferences
+  Future<void> _toggleFavorite() async {
+    final prefs = await SharedPreferences.getInstance();
+    List<String> favorites = prefs.getStringList('favorites') ?? [];
+
+    setState(() {
+      isFavorite = !isFavorite;
+    });
+
+    if (isFavorite) {
+      if (!favorites.contains(widget.productId)) {
+        favorites.add(widget.productId);
+      }
+    } else {
+      favorites.remove(widget.productId);
+    }
+
+    await prefs.setStringList('favorites', favorites);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isFavorite ? 'Added to Favorites' : 'Removed from Favorites',
+          ),
+          duration: const Duration(milliseconds: 700),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Get product data
+    final name = widget.product['name'] ?? 'No name';
+    final price = widget.product['price'] ?? 0;
+    final description = widget.product['description'] ?? 'No description';
+    final imageUrl = widget.product['imageUrl'] ?? '';
+    final stock = widget.product['stock'] ?? 0;
 
     return Scaffold(
       body: Container(
@@ -59,40 +112,66 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     color: isDark ? Colors.grey.shade800 : Colors.white,
                     shape: BoxShape.circle,
                   ),
-                  child: IconButton(
-                    icon: Icon(
-                      isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite
-                          ? Colors.red
-                          : (isDark ? Colors.white : Colors.black87),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        isFavorite = !isFavorite;
-                        FavoritesService.toggleFavorite(widget.product);
-                      });
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(isFavorite
-                              ? 'Added to Favorites'
-                              : 'Removed from Favorites'),
-                          duration: const Duration(milliseconds: 700),
-                          behavior: SnackBarBehavior.floating,
+                  child: _isLoadingFavorite
+                      ? const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          ),
+                        )
+                      : IconButton(
+                          icon: Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            color: isFavorite
+                                ? Colors.red
+                                : (isDark ? Colors.white : Colors.black87),
+                          ),
+                          onPressed: _toggleFavorite,
                         ),
-                      );
-                    },
-                  ),
                 ),
               ],
               flexibleSpace: FlexibleSpaceBar(
-                background: widget.product.imagePaths.isNotEmpty
-                    ? PageView.builder(
-                        itemCount: widget.product.imagePaths.length,
-                        itemBuilder: (context, index) {
-                          return Image.file(
-                            File(widget.product.imagePaths[index]),
-                            fit: BoxFit.cover,
+                background: imageUrl.isNotEmpty
+                    ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Color(0xFFFFF1B8),
+                                Color(0xFF90C695),
+                              ],
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.broken_image_outlined,
+                            size: 120,
+                            color: Colors.white54,
+                          ),
+                        ),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Color(0xFFFFF1B8),
+                                  Color(0xFF90C695),
+                                ],
+                              ),
+                            ),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes !=
+                                        null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            ),
                           );
                         },
                       )
@@ -128,7 +207,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            widget.product.name,
+                            name,
                             style: TextStyle(
                               fontSize: 26,
                               fontWeight: FontWeight.bold,
@@ -137,11 +216,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             ),
                           ),
                         ),
-                        _buildStatusBadge(),
+                        _buildStatusBadge(stock),
                       ],
                     ),
                     const SizedBox(height: 20),
-                    _buildPriceCard(isDark),
+                    _buildPriceCard(isDark, price),
                     const SizedBox(height: 30),
                     Text(
                       'Description',
@@ -153,7 +232,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      widget.product.description,
+                      description,
                       style: TextStyle(
                         fontSize: 16,
                         color: isDark
@@ -165,7 +244,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     const SizedBox(height: 30),
                     _buildSellerInfo(isDark),
                     const SizedBox(height: 30),
-                    _buildActionButtons(context),
+                    _buildActionButtons(context, stock, price, name),
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -178,24 +257,31 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   /// STATUS
-  Widget _buildStatusBadge() {
+  Widget _buildStatusBadge(int stock) {
+    final isAvailable = stock > 0;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.green.shade50,
+        color: isAvailable ? Colors.green.shade50 : Colors.red.shade50,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.green.shade200),
+        border: Border.all(
+          color: isAvailable ? Colors.green.shade200 : Colors.red.shade200,
+        ),
       ),
       child: Row(
-        children: const [
-          Icon(Icons.verified, size: 14, color: Colors.green),
-          SizedBox(width: 4),
+        children: [
+          Icon(
+            isAvailable ? Icons.verified : Icons.remove_circle_outline,
+            size: 14,
+            color: isAvailable ? Colors.green : Colors.red,
+          ),
+          const SizedBox(width: 4),
           Text(
-            'Available',
+            isAvailable ? 'Available ($stock)' : 'Out of Stock',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.bold,
-              color: Colors.green,
+              color: isAvailable ? Colors.green : Colors.red,
             ),
           ),
         ],
@@ -204,7 +290,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   /// PRICE
-  Widget _buildPriceCard(bool isDark) {
+  Widget _buildPriceCard(bool isDark, double price) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -227,7 +313,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                 ),
               ),
               Text(
-                '₱${widget.product.price}',
+                '₱${price.toStringAsFixed(2)}',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
@@ -241,7 +327,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  /// SELLER INFO (NO CHAT)
+  // SELLER INFO
   Widget _buildSellerInfo(bool isDark) {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -249,8 +335,8 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
         color: isDark ? Colors.white.withOpacity(0.05) : Colors.blue.shade50,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
-        children: const [
+      child: const Row(
+        children: [
           CircleAvatar(
             radius: 25,
             backgroundColor: Colors.blue,
@@ -271,31 +357,95 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(
+      BuildContext context, int stock, double price, String name) {
     return SizedBox(
       width: double.infinity,
       height: 55,
       child: ElevatedButton(
-        onPressed: () => _showPurchaseDialog(context),
+        onPressed: stock > 0
+            ? () => _showPurchaseDialog(context, stock, price, name)
+            : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF5A8F60),
           foregroundColor: Colors.white,
+          disabledBackgroundColor: Colors.grey.shade400,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: const Text(
-          'Buy Now',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        child: Text(
+          stock > 0 ? 'Buy Now' : 'Out of Stock',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
 
-  void _showPurchaseDialog(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CheckoutScreen(product: widget.product),
+  void _showPurchaseDialog(
+      BuildContext context, int stock, double price, String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Confirm Purchase'),
+        content: Text('Buy $name for ₱${price.toStringAsFixed(2)}?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context); // Close dialog
+
+              try {
+                // Update stock in Firebase
+                await FirebaseFirestore.instance
+                    .collection('products')
+                    .doc(widget.productId)
+                    .update({
+                  'stock': stock - 1,
+                });
+
+                // Add to orders collection
+                await FirebaseFirestore.instance.collection('orders').add({
+                  'productId': widget.productId,
+                  'productName': name,
+                  'price': price,
+                  'orderDate': FieldValue.serverTimestamp(),
+                });
+
+                if (!context.mounted) return;
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Purchase successful!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+
+                // Go back to product list
+                Navigator.pop(context);
+              } catch (e) {
+                if (!context.mounted) return;
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: $e'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF5A8F60),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Confirm', style: TextStyle(color: Colors.white)),
+          ),
+        ],
       ),
     );
   }
