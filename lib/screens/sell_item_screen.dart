@@ -1,7 +1,6 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import '../models/product.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SellItemScreen extends StatefulWidget {
   const SellItemScreen({super.key});
@@ -12,143 +11,77 @@ class SellItemScreen extends StatefulWidget {
 
 class _SellItemScreenState extends State<SellItemScreen> {
   final TextEditingController nameController = TextEditingController();
-
   final TextEditingController priceController = TextEditingController();
-
   final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController imageUrlController = TextEditingController();
+  final TextEditingController stockController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
-
-  final ImagePicker _picker = ImagePicker();
-
-  List<File> selectedImages = [];
+  bool _isLoading = false;
 
   @override
   void dispose() {
     nameController.dispose();
-
     priceController.dispose();
-
     descriptionController.dispose();
-
+    imageUrlController.dispose();
+    stockController.dispose();
     super.dispose();
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    try {
-      final XFile? image = await _picker.pickImage(
-        source: source,
-        maxWidth: 1200,
-        maxHeight: 1200,
-        imageQuality: 85,
-      );
-
-      if (image != null) {
-        setState(() {
-          selectedImages.add(File(image.path));
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error picking image: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  void _removeImage(int index) {
-    setState(() {
-      selectedImages.removeAt(index);
-    });
-  }
-
-  void _showImageSourceDialog() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: isDark ? Colors.grey.shade900 : Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: isDark ? Colors.grey.shade900 : Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Add Photo',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.camera_alt, color: Colors.blue.shade600),
-              ),
-              title: Text('Camera',
-                  style:
-                      TextStyle(color: isDark ? Colors.white : Colors.black)),
-              onTap: () {
-                Navigator.pop(context);
-
-                _pickImage(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.purple.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.photo_library, color: Colors.purple.shade600),
-              ),
-              title: Text('Gallery',
-                  style:
-                      TextStyle(color: isDark ? Colors.white : Colors.black)),
-              onTap: () {
-                Navigator.pop(context);
-
-                _pickImage(ImageSource.gallery);
-              },
-            ),
-            const SizedBox(height: 10),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      final newProduct = Product(
-        name: nameController.text,
-        price: double.tryParse(priceController.text) ?? 0.0,
-        description: descriptionController.text,
-        imagePaths: selectedImages.map((file) => file.path).toList(),
-      );
+      setState(() {
+        _isLoading = true;
+      });
 
-      Navigator.pop(context, newProduct);
+      try {
+        // Get current user info from SharedPreferences (automatic)
+        final prefs = await SharedPreferences.getInstance();
+        final sellerName = prefs.getString('fullName') ?? 'Campus Student';
+        final sellerId = prefs.getString('studentId') ?? 'unknown';
+
+        // Save to Firebase with seller info
+        await FirebaseFirestore.instance.collection('products').add({
+          'name': nameController.text.trim(),
+          'price': double.parse(priceController.text),
+          'description': descriptionController.text.trim(),
+          'imageUrl': imageUrlController.text.trim(),
+          'stock': int.parse(stockController.text),
+          'sellerName': sellerName,
+          'sellerId': sellerId,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+
+        if (!mounted) return;
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Item posted by $sellerName successfully!'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+
+        // Go back to previous screen
+        Navigator.pop(context);
+      } catch (e) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error posting item: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -192,7 +125,6 @@ class _SellItemScreenState extends State<SellItemScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Header Card
-
                     Container(
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
@@ -226,7 +158,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  'Fill in the details below',
+                                  'Your info will be saved automatically',
                                   style: TextStyle(
                                       fontSize: 14, color: Colors.white70),
                                 ),
@@ -239,65 +171,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
 
                     const SizedBox(height: 20),
 
-                    _buildSectionTitle('Photos', isDark),
-
-                    const SizedBox(height: 12),
-
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isDark
-                            ? Colors.black.withOpacity(0.3)
-                            : Colors.white.withOpacity(0.5),
-                        borderRadius: BorderRadius.circular(16),
-                        border:
-                            Border.all(color: Colors.white.withOpacity(0.2)),
-                      ),
-                      child: Column(
-                        children: [
-                          if (selectedImages.isEmpty)
-                            InkWell(
-                              onTap: _showImageSourceDialog,
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                      color: Colors.white.withOpacity(0.5),
-                                      width: 2),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Center(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.add_photo_alternate_outlined,
-                                          size: 30,
-                                          color: isDark
-                                              ? Colors.white70
-                                              : Colors.grey.shade800),
-                                      const SizedBox(height: 8),
-                                      Text('Add Photos',
-                                          style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              color: isDark
-                                                  ? Colors.white70
-                                                  : Colors.grey.shade800)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            )
-                          else
-                            _buildImageGrid(),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
                     _buildSectionTitle('Item Details', isDark),
-
                     const SizedBox(height: 12),
 
                     _buildTextField(
@@ -323,12 +197,32 @@ class _SellItemScreenState extends State<SellItemScreen> {
                       prefix: const Text('₱ ',
                           style: TextStyle(fontWeight: FontWeight.bold)),
                       validator: (value) {
-                        if (value == null || value.isEmpty)
+                        if (value == null || value.isEmpty) {
                           return 'Please enter price';
-
-                        if (double.tryParse(value) == null)
+                        }
+                        if (double.tryParse(value) == null) {
                           return 'Enter a valid number';
+                        }
+                        return null;
+                      },
+                    ),
 
+                    const SizedBox(height: 16),
+
+                    _buildTextField(
+                      isDark: isDark,
+                      controller: stockController,
+                      label: 'Stock Quantity',
+                      hint: '0',
+                      icon: Icons.inventory_2_outlined,
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter stock quantity';
+                        }
+                        if (int.tryParse(value) == null) {
+                          return 'Enter a valid number';
+                        }
                         return null;
                       },
                     ),
@@ -347,25 +241,84 @@ class _SellItemScreenState extends State<SellItemScreen> {
                           : null,
                     ),
 
+                    const SizedBox(height: 16),
+
+                    _buildTextField(
+                      isDark: isDark,
+                      controller: imageUrlController,
+                      label: 'Image URL',
+                      hint: 'https://example.com/image.jpg',
+                      icon: Icons.image_outlined,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter image URL';
+                        }
+                        if (!value.startsWith('http')) {
+                          return 'Please enter a valid URL';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    // Helper text for image URL
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline,
+                              size: 20, color: Colors.blue.shade700),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Tip: Upload your image to imgur.com or use an image URL',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? Colors.blue.shade300
+                                    : Colors.blue.shade700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
                     const SizedBox(height: 20),
 
                     // Post Button
-
                     SizedBox(
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: _submitForm,
+                        onPressed: _isLoading ? null : _submitForm,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFFFFF1B8).withOpacity(0.9),
+                          backgroundColor:
+                              const Color(0xFFFFF1B8).withOpacity(0.9),
                           foregroundColor:
                               const Color.fromARGB(255, 78, 160, 86),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),
+                          disabledBackgroundColor: Colors.grey.shade400,
                         ),
-                        child: const Text('Post Item',
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold)),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text('Post Item',
+                                style: TextStyle(
+                                    fontSize: 18, fontWeight: FontWeight.bold)),
                       ),
                     ),
 
@@ -377,59 +330,6 @@ class _SellItemScreenState extends State<SellItemScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildImageGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
-      ),
-      itemCount: selectedImages.length + 1,
-      itemBuilder: (context, index) {
-        if (index == selectedImages.length) {
-          return InkWell(
-            onTap: _showImageSourceDialog,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.3)),
-              ),
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
-          );
-        }
-
-        return Stack(
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                image: DecorationImage(
-                    image: FileImage(selectedImages[index]), fit: BoxFit.cover),
-              ),
-            ),
-            Positioned(
-              top: 4,
-              right: 4,
-              child: InkWell(
-                onTap: () => _removeImage(index),
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                      color: Colors.red, shape: BoxShape.circle),
-                  child: const Icon(Icons.close, color: Colors.white, size: 12),
-                ),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 
