@@ -367,7 +367,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   void _placeOrder() {
     if (_formKey.currentState!.validate()) {
-      // CREATE ORDER OBJECT
       final order = Order(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         product: widget.product,
