@@ -1,13 +1,19 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import '../models/product.dart';
-import '../models/orders.dart';
-import '../services/order_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'orders_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  final Product product;
+  final String productId;
+  final Map<String, dynamic> product;
+  final int quantity;
 
-  const CheckoutScreen({super.key, required this.product});
+  const CheckoutScreen({
+    super.key,
+    required this.productId,
+    required this.product,
+    required this.quantity,
+  });
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -19,6 +25,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   final _contactController = TextEditingController();
   final _locationController = TextEditingController();
   final _notesController = TextEditingController();
+  bool _isProcessing = false;
 
   @override
   void dispose() {
@@ -32,6 +39,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Extract data
+    final name = widget.product['name'] ?? 'No Name';
+    final price = (widget.product['price'] ?? 0).toDouble();
+    final imageUrl = widget.product['imageUrl'] ?? '';
+    final totalPrice = price * widget.quantity;
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.blueGrey.shade50,
@@ -52,6 +65,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
+        automaticallyImplyLeading: !_isProcessing,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -76,22 +90,26 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   // Product Image
                   ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    child: widget.product.imagePaths.isNotEmpty
-                        ? Image.file(
-                            File(widget.product.imagePaths[0]),
+                    child: imageUrl.isNotEmpty
+                        ? Image.network(
+                            imageUrl,
                             width: 80,
                             height: 80,
                             fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
+                              width: 80,
+                              height: 80,
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.broken_image),
+                            ),
                           )
                         : Container(
                             width: 80,
                             height: 80,
-                            decoration: BoxDecoration(
+                            decoration: const BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [
-                                  const Color(0xFFFFF1B8),
-                                  const Color(0xFF90C695)
-                                ],
+                                colors: [Color(0xFFFFF1B8), Color(0xFF90C695)],
                               ),
                             ),
                             child: const Icon(Icons.shopping_bag_outlined,
@@ -105,7 +123,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          widget.product.name,
+                          name,
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -116,9 +134,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '₱${widget.product.price}',
+                          'Price: ₱${price.toStringAsFixed(2)}',
                           style: TextStyle(
-                            fontSize: 20,
+                            fontSize: 14,
+                            color: isDark
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade600,
+                          ),
+                        ),
+                        Text(
+                          'Quantity: x${widget.quantity}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: isDark
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade600,
+                          ),
+                        ),
+                        const Divider(),
+                        Text(
+                          'Total: ₱${totalPrice.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: Colors.green.shade600,
                           ),
@@ -284,7 +322,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                   ),
                   Text(
-                    '₱${widget.product.price}',
+                    '₱${totalPrice.toStringAsFixed(2)}',
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -298,18 +336,22 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: _placeOrder,
+                  onPressed: _isProcessing ? null : _placeOrder,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF5A8F60),
                     foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey.shade400,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text(
-                    'Place Order',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
+                  child: _isProcessing
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Place Order',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
                 ),
               ),
             ],
@@ -365,86 +407,159 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  void _placeOrder() {
-    if (_formKey.currentState!.validate()) {
-      final order = Order(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        product: widget.product,
-        buyerName: _nameController.text,
-        contactNumber: _contactController.text,
-        meetupLocation: _locationController.text,
-        notes: _notesController.text.isEmpty ? null : _notesController.text,
-        orderDate: DateTime.now(),
-        status: 'pending',
+  Future<void> _placeOrder() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    // Get current student ID from SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    final currentStudentId = prefs.getString('studentId');
+
+    if (currentStudentId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please login to place an order'),
+          backgroundColor: Colors.red,
+        ),
       );
+      return;
+    }
 
-      // SAVE ORDER - ITO YUNG KULANG MO!
-      OrdersService.addOrder(order);
+    setState(() {
+      _isProcessing = true;
+    });
 
-      // Debug print (optional, para makita mo sa console)
-      print(
-          'Order saved! Total orders: ${OrdersService.getAllOrders().length}');
-      print('Order ID: ${order.id}');
-      print('Product: ${order.product.name}');
+    try {
+      final firestore = FirebaseFirestore.instance;
+      final productRef = firestore.collection('products').doc(widget.productId);
+      final totalPrice = (widget.product['price'] ?? 0) * widget.quantity;
 
-      showDialog(
-        context: context,
-        builder: (context) {
-          final isDark = Theme.of(context).brightness == Brightness.dark;
-          return AlertDialog(
-            backgroundColor: isDark ? Colors.grey.shade900 : Colors.white,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.check_circle,
-                      color: Colors.green.shade600, size: 48),
+      await firestore.runTransaction((transaction) async {
+        final productSnapshot = await transaction.get(productRef);
+
+        if (!productSnapshot.exists) {
+          throw Exception("Product no longer exists!");
+        }
+
+        final currentStock = productSnapshot.data()?['stock'] ?? 0;
+
+        if (currentStock < widget.quantity) {
+          throw Exception("Sorry, not enough stock available!");
+        }
+
+        // 1. Decrement Stock
+        transaction.update(productRef, {
+          'stock': currentStock - widget.quantity,
+        });
+
+        // 2. Create Order with buyerStudentId
+        final orderRef = firestore.collection('orders').doc();
+        transaction.set(orderRef, {
+          'orderId': orderRef.id,
+          'productId': widget.productId,
+          'productName': widget.product['name'],
+          'productImage': widget.product['imageUrl'],
+          'quantity': widget.quantity,
+          'pricePerItem': widget.product['price'],
+          'totalPrice': totalPrice,
+          'productPrice': totalPrice,
+          'buyerName': _nameController.text,
+          'contactNumber': _contactController.text,
+          'meetupLocation': _locationController.text,
+          'notes': _notesController.text,
+          'status': 'pending',
+          'sellerId': widget.product['sellerId'],
+          'buyerStudentId':
+              currentStudentId, // IMPORTANT: Added buyerStudentId field
+          'orderDate': FieldValue.serverTimestamp(),
+        });
+      });
+
+      if (!mounted) return;
+      _showSuccessDialog();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString().replaceAll("Exception:", "")}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        _isProcessing = false;
+      });
+    }
+  }
+
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? Colors.grey.shade900 : Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Order Placed!',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-              ],
-            ),
-            content: Text(
-              'Your order has been sent to the seller. They will contact you to arrange the meet-up.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+                child: Icon(Icons.check_circle,
+                    color: Colors.green.shade600, size: 48),
               ),
-            ),
-            actions: [
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Close dialog
-                    Navigator.pop(context); // Go back to previous screen
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF5A8F60),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text('Done'),
+              const SizedBox(height: 16),
+              Text(
+                'Order Placed!',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black,
                 ),
               ),
             ],
-          );
-        },
-      );
-    }
+          ),
+          content: Text(
+            'Your order has been sent to the seller. Please wait for them to contact you.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
+            ),
+          ),
+          actions: [
+            // Button 1: Done (Close Dialog and Go Back)
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Close checkout screen
+              },
+              child: const Text('Close'),
+            ),
+            // Button 2: Go to My Orders
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+
+                // Navigate to MyOrdersPage
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MyOrdersPage()),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF5A8F60),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('View My Orders'),
+            ),
+          ],
+        );
+      },
+    );
   }
 }
