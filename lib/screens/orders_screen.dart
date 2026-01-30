@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
-import '../models/orders.dart';
-import '../services/order_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MyOrdersPage extends StatefulWidget {
   const MyOrdersPage({super.key});
@@ -12,15 +11,59 @@ class MyOrdersPage extends StatefulWidget {
 
 class _MyOrdersPageState extends State<MyOrdersPage> {
   String _selectedFilter = 'all';
+  String? currentStudentId;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadStudentId();
+  }
+
+  Future<void> _loadStudentId() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      // Get the saved student ID
+      currentStudentId = prefs.getString('studentId');
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final orders = OrdersService.getAllOrders();
 
-    final filteredOrders = _selectedFilter == 'all'
-        ? orders
-        : orders.where((order) => order.status == _selectedFilter).toList();
+    // Loading state while getting student ID
+    if (currentStudentId == null) {
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: isDark
+                ? [
+                    Colors.black,
+                    Colors.grey.shade900,
+                  ]
+                : [
+                    const Color(0xFFFFF1B8),
+                    const Color(0xFF90C695),
+                  ],
+          ),
+        ),
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: const Text(
+              'My Orders',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+          ),
+          body: const Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -47,41 +90,105 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
           backgroundColor: Colors.transparent,
           elevation: 0,
         ),
-        body: Column(
-          children: [
-            // Filter Chips
-            Container(
-              padding: const EdgeInsets.all(16),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    _buildFilterChip('All', 'all', isDark),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Pending', 'pending', isDark),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Confirmed', 'confirmed', isDark),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Completed', 'completed', isDark),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Cancelled', 'cancelled', isDark),
-                  ],
-                ),
-              ),
-            ),
+        body: StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection('orders')
+              .where('buyerStudentId', isEqualTo: currentStudentId)
+              .snapshots(),
+          builder: (context, snapshot) {
+            // Loading State
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-            // Orders List
-            Expanded(
-              child: filteredOrders.isEmpty
-                  ? _buildEmptyState(isDark)
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      itemCount: filteredOrders.length,
-                      itemBuilder: (context, index) {
-                        return _buildOrderCard(filteredOrders[index], isDark);
-                      },
-                    ),
-            ),
+            // Error State
+            if (snapshot.hasError) {
+              return Column(
+                children: [
+                  _buildFilterChips(isDark),
+                  Expanded(
+                      child:
+                          _buildErrorState(isDark, snapshot.error.toString())),
+                ],
+              );
+            }
+
+            // No Data or Empty
+            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+              return Column(
+                children: [
+                  _buildFilterChips(isDark),
+                  Expanded(child: _buildEmptyState(isDark)),
+                ],
+              );
+            }
+
+            // Get all orders and sort by date
+            final allOrders = snapshot.data!.docs;
+
+            // Sort by orderDate (newest first)
+            allOrders.sort((a, b) {
+              final aDate =
+                  (a.data() as Map<String, dynamic>)['orderDate'] as Timestamp?;
+              final bDate =
+                  (b.data() as Map<String, dynamic>)['orderDate'] as Timestamp?;
+
+              if (aDate == null || bDate == null) return 0;
+              return bDate.compareTo(aDate); // Descending order (newest first)
+            });
+
+            // Filter orders based on selected filter
+            final filteredOrders = _selectedFilter == 'all'
+                ? allOrders
+                : allOrders.where((doc) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    return data['status'] == _selectedFilter;
+                  }).toList();
+
+            return Column(
+              children: [
+                // Filter Chips
+                _buildFilterChips(isDark),
+
+                // Orders List
+                Expanded(
+                  child: filteredOrders.isEmpty
+                      ? _buildEmptyState(isDark)
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: filteredOrders.length,
+                          itemBuilder: (context, index) {
+                            final doc = filteredOrders[index];
+                            final order = doc.data() as Map<String, dynamic>;
+                            final orderId = doc.id;
+                            return _buildOrderCard(order, orderId, isDark);
+                          },
+                        ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFilterChips(bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            _buildFilterChip('All', 'all', isDark),
+            const SizedBox(width: 8),
+            _buildFilterChip('Pending', 'pending', isDark),
+            const SizedBox(width: 8),
+            _buildFilterChip('Confirmed', 'confirmed', isDark),
+            const SizedBox(width: 8),
+            _buildFilterChip('Completed', 'completed', isDark),
+            const SizedBox(width: 8),
+            _buildFilterChip('Cancelled', 'cancelled', isDark),
           ],
         ),
       ),
@@ -117,6 +224,13 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
   }
 
   Widget _buildEmptyState(bool isDark) {
+    String message;
+    if (_selectedFilter == 'all') {
+      message = 'No orders yet';
+    } else {
+      message = 'No ${_selectedFilter} orders';
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -128,7 +242,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
           ),
           const SizedBox(height: 16),
           Text(
-            'No orders yet',
+            message,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -148,7 +262,56 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     );
   }
 
-  Widget _buildOrderCard(Order order, bool isDark) {
+  Widget _buildErrorState(bool isDark, String error) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.error_outline,
+            size: 64,
+            color: Colors.red.shade400,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Something went wrong',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white70 : Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              error,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.white38 : Colors.grey.shade500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderCard(
+      Map<String, dynamic> order, String orderId, bool isDark) {
+    final status = order['status'] ?? 'pending';
+    final orderDate =
+        (order['orderDate'] as Timestamp?)?.toDate() ?? DateTime.now();
+    final buyerName = order['buyerName'] ?? 'Unknown';
+    final meetupLocation = order['meetupLocation'] ?? 'Not specified';
+    final notes = order['notes'] ?? '';
+
+    // Product info
+    final productName = order['productName'] ?? 'Unknown Product';
+    final productPrice = order['productPrice'] ?? 0;
+    final productImage = order['productImage'] ?? '';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -161,7 +324,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: _getStatusColor(order.status).withOpacity(0.1),
+              color: _getStatusColor(status).withOpacity(0.1),
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(16),
                 topRight: Radius.circular(16),
@@ -173,15 +336,15 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                 Row(
                   children: [
                     Icon(
-                      _getStatusIcon(order.status),
-                      color: _getStatusColor(order.status),
+                      _getStatusIcon(status),
+                      color: _getStatusColor(status),
                       size: 20,
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      _getStatusLabel(order.status),
+                      _getStatusLabel(status),
                       style: TextStyle(
-                        color: _getStatusColor(order.status),
+                        color: _getStatusColor(status),
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
                       ),
@@ -189,7 +352,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                   ],
                 ),
                 Text(
-                  _formatDate(order.orderDate),
+                  _formatDate(orderDate),
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -207,23 +370,57 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                 // Product Image
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: order.product.imagePaths.isNotEmpty
-                      ? Image.file(
-                          File(order.product.imagePaths[0]),
+                  child: productImage.isNotEmpty
+                      ? Image.network(
+                          productImage,
                           width: 80,
                           height: 80,
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFFFFF1B8), Color(0xFF90C695)],
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(
+                              Icons.shopping_bag_outlined,
+                              size: 40,
+                              color: Colors.white54,
+                            ),
+                          ),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              width: 80,
+                              height: 80,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade200,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes !=
+                                          null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              ),
+                            );
+                          },
                         )
                       : Container(
                           width: 80,
                           height: 80,
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                const Color(0xFFFFF1B8),
-                                const Color(0xFF90C695)
-                              ],
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFFF1B8), Color(0xFF90C695)],
                             ),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
                             Icons.shopping_bag_outlined,
@@ -240,7 +437,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        order.product.name,
+                        productName,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -251,7 +448,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '₱${order.product.price}',
+                        '₱${productPrice.toStringAsFixed(2)}',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -278,22 +475,22 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                 _buildInfoRow(
                   Icons.person_outline,
                   'Buyer',
-                  order.buyerName,
+                  buyerName,
                   isDark,
                 ),
                 const SizedBox(height: 8),
                 _buildInfoRow(
                   Icons.location_on_outlined,
                   'Meet-up',
-                  order.meetupLocation,
+                  meetupLocation,
                   isDark,
                 ),
-                if (order.notes != null && order.notes!.isNotEmpty) ...[
+                if (notes.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   _buildInfoRow(
                     Icons.note_outlined,
                     'Notes',
-                    order.notes!,
+                    notes,
                     isDark,
                   ),
                 ],
@@ -302,7 +499,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
           ),
 
           // Action Buttons
-          if (order.status == 'pending')
+          if (status == 'pending')
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -316,7 +513,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                 children: [
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () => _cancelOrder(order.id),
+                      onPressed: () => _cancelOrder(orderId),
                       style: OutlinedButton.styleFrom(
                         side: const BorderSide(color: Colors.red),
                         shape: RoundedRectangleBorder(
@@ -332,12 +529,11 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
                 ],
               ),
             ),
 
-          if (order.status == 'confirmed')
+          if (status == 'confirmed')
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -350,7 +546,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               child: SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () => _completeOrder(order.id),
+                  onPressed: () => _completeOrder(orderId),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green.shade600,
                     foregroundColor: Colors.white,
@@ -365,7 +561,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               ),
             ),
 
-          if (order.status == 'cancelled')
+          if (status == 'cancelled')
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -378,7 +574,7 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               child: SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () => _deleteOrder(order.id),
+                  onPressed: () => _deleteOrder(orderId),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(color: Colors.red.shade400),
                     shape: RoundedRectangleBorder(
@@ -529,23 +725,35 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                OrdersService.updateOrderStatus(orderId, 'cancelled');
-                Navigator.pop(context);
-                setState(() {});
+              onPressed: () async {
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('orders')
+                      .doc(orderId)
+                      .update({'status': 'cancelled'});
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Order cancelled'),
-                    backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-
-                Future.delayed(const Duration(milliseconds: 500), () {
-                  _deleteOrder(orderId);
-                });
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Order cancelled'),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                        duration: Duration(seconds: 2),
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
@@ -562,24 +770,32 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
     );
   }
 
-  void _completeOrder(String orderId) {
-    OrdersService.updateOrderStatus(orderId, 'completed');
-    setState(() {});
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Order marked as completed!'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
+  void _completeOrder(String orderId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('orders')
+          .doc(orderId)
+          .update({'status': 'completed'});
 
-  void _contactSeller(Order order) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Opening chat with seller...'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Order marked as completed!'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   void _deleteOrder(String orderId) {
@@ -621,17 +837,34 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                OrdersService.deleteOrder(orderId);
-                Navigator.pop(context);
-                setState(() {});
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Order deleted successfully'),
-                    backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
+              onPressed: () async {
+                try {
+                  await FirebaseFirestore.instance
+                      .collection('orders')
+                      .doc(orderId)
+                      .delete();
+
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Order deleted successfully'),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Error: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red,
