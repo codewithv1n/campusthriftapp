@@ -543,21 +543,100 @@ class _MyOrdersPageState extends State<MyOrdersPage> {
                   bottomRight: Radius.circular(16),
                 ),
               ),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: () => _completeOrder(orderId),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade600,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  icon: const Icon(Icons.check_circle_outline, size: 20),
-                  label: const Text('Mark as Completed'),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
                 ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline,
+                        color: Colors.blue.shade700, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Waiting for seller to deliver the item',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.blue.shade700,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          if (status == 'completed')
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey.shade900 : Colors.white,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(16),
+                  bottomRight: Radius.circular(16),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Colors.green.shade50, Colors.blue.shade50],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.celebration,
+                          size: 40,
+                          color: Colors.green.shade600,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Thank You!',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green.shade700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Order completed successfully',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _deleteOrder(orderId),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.grey.shade400),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                      icon: Icon(Icons.delete_outline,
+                          color: Colors.grey.shade600, size: 20),
+                      label: Text(
+                        'Delete Order',
+                        style: TextStyle(color: Colors.grey.shade600),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
 
