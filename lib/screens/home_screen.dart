@@ -261,7 +261,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          const SellItemScreen(),
+                                          const SellItemScreen(
+                                        String: null,
+                                      ),
                                     ),
                                   );
                                 },
@@ -567,7 +569,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     Navigator.pop(context);
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const SellItemsPage()),
+                      MaterialPageRoute(
+                          builder: (_) => const SellListingScreen()),
                     );
                   },
                 ),
