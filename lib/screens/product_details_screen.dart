@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'checkout_screen.dart';
 
 class ProductDetailsScreen extends StatefulWidget {
   final String productId;
@@ -74,10 +74,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
 
     // Get product data
     final name = widget.product['name'] ?? 'No name';
-    final price = widget.product['price'] ?? 0;
+    final price = (widget.product['price'] ?? 0).toDouble();
     final description = widget.product['description'] ?? 'No description';
     final imageUrl = widget.product['imageUrl'] ?? '';
     final stock = widget.product['stock'] ?? 0;
+    final sellerName = widget.product['sellerName'] ?? 'Campus Student';
+    final sellerId = widget.product['sellerId'] ?? 'student';
 
     return Scaffold(
       body: Container(
@@ -140,10 +142,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                         errorBuilder: (context, error, stackTrace) => Container(
                           decoration: const BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [
-                                Color(0xFFFFF1B8),
-                                Color(0xFF90C695),
-                              ],
+                              colors: [Color(0xFFFFF1B8), Color(0xFF90C695)],
                             ),
                           ),
                           child: const Icon(
@@ -152,36 +151,11 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                             color: Colors.white54,
                           ),
                         ),
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Color(0xFFFFF1B8),
-                                  Color(0xFF90C695),
-                                ],
-                              ),
-                            ),
-                            child: Center(
-                              child: CircularProgressIndicator(
-                                value: loadingProgress.expectedTotalBytes !=
-                                        null
-                                    ? loadingProgress.cumulativeBytesLoaded /
-                                        loadingProgress.expectedTotalBytes!
-                                    : null,
-                              ),
-                            ),
-                          );
-                        },
                       )
                     : Container(
                         decoration: const BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [
-                              Color(0xFFFFF1B8),
-                              Color(0xFF90C695),
-                            ],
+                            colors: [Color(0xFFFFF1B8), Color(0xFF90C695)],
                           ),
                         ),
                         child: const Icon(
@@ -242,9 +216,12 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                       ),
                     ),
                     const SizedBox(height: 30),
-                    _buildSellerInfo(isDark),
+                    _buildSellerInfo(isDark, sellerName, sellerId),
                     const SizedBox(height: 30),
+
+                    // PASS THE CORRECT PARAMETERS TO THE BUTTON
                     _buildActionButtons(context, stock, price, name),
+
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -328,28 +305,34 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
   }
 
   // SELLER INFO
-  Widget _buildSellerInfo(bool isDark) {
+  Widget _buildSellerInfo(bool isDark, String sellerName, String sellerId) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withOpacity(0.05) : Colors.blue.shade50,
         borderRadius: BorderRadius.circular(16),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          CircleAvatar(
+          const CircleAvatar(
             radius: 25,
             backgroundColor: Colors.blue,
             child: Icon(Icons.person, color: Colors.white),
           ),
-          SizedBox(width: 16),
+          const SizedBox(width: 16),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Seller',
+              const Text('Seller',
                   style: TextStyle(fontSize: 12, color: Colors.blue)),
-              Text('Campus Student',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(sellerName,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold)),
+              Text(sellerId,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  )),
             ],
           ),
         ],
@@ -364,7 +347,7 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
       height: 55,
       child: ElevatedButton(
         onPressed: stock > 0
-            ? () => _showPurchaseDialog(context, stock, price, name)
+            ? () => _showQuantityDialog(context, stock, price, name)
             : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: const Color(0xFF5A8F60),
@@ -381,72 +364,119 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     );
   }
 
-  void _showPurchaseDialog(
-      BuildContext context, int stock, double price, String name) {
+  void _showQuantityDialog(
+      BuildContext context, int maxStock, double pricePerItem, String name) {
+    int selectedQuantity = 1;
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Confirm Purchase'),
-        content: Text('Buy $name for ₱${price.toStringAsFixed(2)}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context); // Close dialog
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            double total = selectedQuantity * pricePerItem;
 
-              try {
-                // Update stock in Firebase
-                await FirebaseFirestore.instance
-                    .collection('products')
-                    .doc(widget.productId)
-                    .update({
-                  'stock': stock - 1,
-                });
-
-                // Add to orders collection
-                await FirebaseFirestore.instance.collection('orders').add({
-                  'productId': widget.productId,
-                  'productName': name,
-                  'price': price,
-                  'orderDate': FieldValue.serverTimestamp(),
-                });
-
-                if (!context.mounted) return;
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Purchase successful!'),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-
-                // Go back to product list
-                Navigator.pop(context);
-              } catch (e) {
-                if (!context.mounted) return;
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: $e'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF5A8F60),
+            return AlertDialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(16)),
+              title: Text('Buy $name'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Select Quantity:'),
+                  const SizedBox(height: 15),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Decrease Button
+                      IconButton(
+                        onPressed: selectedQuantity > 1
+                            ? () {
+                                setDialogState(() {
+                                  selectedQuantity--;
+                                });
+                              }
+                            : null,
+                        icon: const Icon(Icons.remove_circle_outline),
+                        color: Colors.red,
+                        iconSize: 32,
+                      ),
+                      const SizedBox(width: 20),
+                      // Quantity Display
+                      Text(
+                        '$selectedQuantity',
+                        style: const TextStyle(
+                            fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 20),
+                      // Increase Button
+                      IconButton(
+                        onPressed: selectedQuantity < maxStock
+                            ? () {
+                                setDialogState(() {
+                                  selectedQuantity++;
+                                });
+                              }
+                            : null,
+                        icon: const Icon(Icons.add_circle_outline),
+                        color: Colors.green,
+                        iconSize: 32,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Available Stock: $maxStock',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                  const Divider(height: 30),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total:',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        '₱${total.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green),
+                      ),
+                    ],
+                  )
+                ],
               ),
-            ),
-            child: const Text('Confirm', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context); // Close dialog
+
+                    // Navigate to Checkout Screen
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CheckoutScreen(
+                          product: widget.product,
+                          productId: widget.productId,
+                          quantity: selectedQuantity,
+                        ),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5A8F60),
+                  ),
+                  child: const Text('Proceed to Checkout',
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
