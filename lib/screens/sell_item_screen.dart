@@ -36,7 +36,7 @@ class _SellItemScreenState extends State<SellItemScreen> {
       });
 
       try {
-        // Get current user info from SharedPreferences (automatic)
+        // Get current user info from SharedPreferences
         final prefs = await SharedPreferences.getInstance();
         final sellerName = prefs.getString('fullName') ?? 'Campus Student';
         final sellerId = prefs.getString('studentId') ?? 'unknown';
