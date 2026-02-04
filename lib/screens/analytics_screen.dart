@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 class AnalyticsScreen extends StatefulWidget {
@@ -13,79 +12,83 @@ class AnalyticsScreen extends StatefulWidget {
 
 class _AnalyticsScreenState extends State<AnalyticsScreen> {
   bool _isLoading = true;
-  String _userId = '';
+  String _studentId = '';
+
+  // MAIN STATS
   int _totalListings = 0;
-  int _soldItems = 0;
-  int _activeListings = 0;
+  int _pendingOrders = 0;
+  int _completedOrders = 0;
   double _totalRevenue = 0.0;
-  List<Map<String, dynamic>> _recentSales = [];
-  Map<String, int> _salesByCategory = {};
 
   @override
   void initState() {
     super.initState();
-    _loadAnalytics();
+    _loadData();
   }
 
-  Future<void> _loadAnalytics() async {
+  Future<void> _loadData() async {
     setState(() => _isLoading = true);
+
     try {
       final prefs = await SharedPreferences.getInstance();
-      _userId = prefs.getString('userId') ?? '';
+      final studentId = prefs.getString('studentId') ?? '';
 
-      if (_userId.isEmpty) {
+      if (studentId.isEmpty) {
         setState(() => _isLoading = false);
         return;
       }
 
-      final productsQuery = await FirebaseFirestore.instance
+      setState(() => _studentId = studentId);
+
+      final productsSnapshot = await FirebaseFirestore.instance
           .collection('products')
-          .where('sellerId', isEqualTo: _userId)
+          .where('sellerId', isEqualTo: studentId)
           .get();
 
-      int sold = 0;
-      int active = 0;
+      final totalListings = productsSnapshot.docs.length;
+
+      final pendingSnapshot = await FirebaseFirestore.instance
+          .collection('orders')
+          .where('sellerId', isEqualTo: studentId)
+          .where('status', isEqualTo: 'pending')
+          .get();
+
+      final pendingOrders = pendingSnapshot.docs.length;
+
+      final completedSnapshot = await FirebaseFirestore.instance
+          .collection('orders')
+          .where('sellerId', isEqualTo: studentId)
+          .where('status', isEqualTo: 'completed')
+          .get();
+
+      final completedOrders = completedSnapshot.docs.length;
+
       double revenue = 0.0;
-      Map<String, int> categoryCount = {};
-
-      for (var doc in productsQuery.docs) {
+      for (var doc in completedSnapshot.docs) {
         final data = doc.data();
-        final status = data['status'] ?? 'available';
-        final category = data['category'] ?? 'Other';
+        var priceRaw = data['totalPrice'];
 
-        if (status == 'sold') {
-          sold++;
-          revenue += (data['price'] ?? 0.0);
-          categoryCount[category] = (categoryCount[category] ?? 0) + 1;
-        } else if (status == 'available') {
-          active++;
+        if (priceRaw is int) {
+          revenue += priceRaw.toDouble();
+        } else if (priceRaw is double) {
+          revenue += priceRaw;
+        } else if (priceRaw is String) {
+          revenue += double.tryParse(priceRaw) ?? 0.0;
         }
       }
 
-      final salesQuery = await FirebaseFirestore.instance
-          .collection('orders')
-          .where('sellerId', isEqualTo: _userId)
-          .orderBy('createdAt', descending: true)
-          .limit(5)
-          .get();
-
-      List<Map<String, dynamic>> sales = [];
-      for (var doc in salesQuery.docs) {
-        sales.add({'id': doc.id, ...doc.data()});
+      if (mounted) {
+        setState(() {
+          _totalListings = totalListings;
+          _pendingOrders = pendingOrders;
+          _completedOrders = completedOrders;
+          _totalRevenue = revenue;
+          _isLoading = false;
+        });
       }
-
-      setState(() {
-        _totalListings = productsQuery.docs.length;
-        _soldItems = sold;
-        _activeListings = active;
-        _totalRevenue = revenue;
-        _recentSales = sales;
-        _salesByCategory = categoryCount;
-        _isLoading = false;
-      });
     } catch (e) {
-      print('Error loading analytics: $e');
-      setState(() => _isLoading = false);
+      print('❌ ERROR: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -93,131 +96,161 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    if (_isLoading) {
-      return Scaffold(
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isDark
-                  ? [Colors.grey.shade900, Colors.grey.shade800]
-                  : [const Color(0xFFFFF1B8), const Color(0xFF90C695)],
-            ),
-          ),
-          child: const Center(child: CircularProgressIndicator()),
-        ),
-      );
-    }
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text(
+        title: const Text(
           'Sales Analytics',
-          style: GoogleFonts.poppins(fontWeight: FontWeight.bold, fontSize: 20),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
         centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: isDark ? Colors.white : Colors.black87,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadData,
+            tooltip: 'Refresh Data',
+          ),
+        ],
       ),
       body: Container(
         width: double.infinity,
         height: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: isDark
-                ? [Colors.grey.shade900, Colors.grey.shade800]
+                ? [Colors.black, Colors.grey.shade900]
                 : [const Color(0xFFFFF1B8), const Color(0xFF90C695)],
           ),
         ),
         child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: _loadAnalytics,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Stats Cards 2-per-row
-                  _buildStatsGrid(isDark),
-                  const SizedBox(height: 24),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
+              : RefreshIndicator(
+                  onRefresh: _loadData,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? Colors.grey.shade800.withOpacity(0.5)
+                                  : Colors.white.withOpacity(0.5),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              'Seller ID: $_studentId',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: isDark ? Colors.white70 : Colors.black54,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
 
-                  // Sales by Category Chart
-                  if (_salesByCategory.isNotEmpty) ...[
-                    _buildSectionTitle('Sales by Category', isDark),
-                    const SizedBox(height: 12),
-                    _buildCategoryChart(isDark),
-                    const SizedBox(height: 24),
-                  ],
+                        Text(
+                          'Overview',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
 
-                  // Recent Sales
-                  _buildSectionTitle('Recent Sales', isDark),
-                  const SizedBox(height: 12),
-                  _buildRecentSales(isDark),
-                ],
-              ),
-            ),
-          ),
+                        // 4 STAT CARDS
+                        _buildStatsGrid(isDark),
+
+                        const SizedBox(height: 32),
+
+                        Text(
+                          'Performance Graph',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
+                        _buildBarChart(isDark),
+
+                        const SizedBox(height: 30),
+                      ],
+                    ),
+                  ),
+                ),
         ),
       ),
     );
   }
 
-  // 2-per-row Stats Grid
+  // 4 STAT CARDS WIDGET
   Widget _buildStatsGrid(bool isDark) {
-    final cards = [
-      _buildStatCard(
-        icon: Icons.inventory_2_outlined,
-        label: 'Total Listings',
-        value: _totalListings.toString(),
-        color: Colors.blue,
-        isDark: isDark,
-      ),
-      _buildStatCard(
-        icon: Icons.check_circle_outline,
-        label: 'Items Sold',
-        value: _soldItems.toString(),
-        color: Colors.green,
-        isDark: isDark,
-      ),
-      _buildStatCard(
-        icon: Icons.store_outlined,
-        label: 'Active Listings',
-        value: _activeListings.toString(),
-        color: Colors.orange,
-        isDark: isDark,
-      ),
-      _buildStatCard(
-        icon: Icons.attach_money,
-        label: 'Total Revenue',
-        value: '₱${_totalRevenue.toStringAsFixed(0)}',
-        color: const Color(0xFF90C695),
-        isDark: isDark,
-      ),
-    ];
-
-    List<Widget> rows = [];
-    for (int i = 0; i < cards.length; i += 2) {
-      rows.add(Row(
-        children: [
-          Expanded(child: cards[i]),
-          const SizedBox(width: 12),
-          if (i + 1 < cards.length)
-            Expanded(child: cards[i + 1])
-          else
-            Expanded(child: Container()),
-        ],
-      ));
-      rows.add(const SizedBox(height: 12));
-    }
-
-    return Column(children: rows);
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.inventory_2_outlined,
+                label: 'Listings',
+                value: _totalListings.toString(),
+                color: Colors.blue,
+                isDark: isDark,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.pending_actions,
+                label: 'Pending',
+                value: _pendingOrders.toString(),
+                color: Colors.orange,
+                isDark: isDark,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.check_circle_outline,
+                label: 'Completed',
+                value: _completedOrders.toString(),
+                color: Colors.green,
+                isDark: isDark,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildStatCard(
+                icon: Icons.attach_money,
+                label: 'Revenue',
+                value: '₱${_totalRevenue.toStringAsFixed(0)}',
+                color: const Color(0xFF90C695),
+                isDark: isDark,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _buildStatCard({
@@ -230,19 +263,22 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.black.withOpacity(0.3)
-            : Colors.white.withOpacity(0.7),
+        color: isDark ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withOpacity(0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(icon, color: color, size: 28),
@@ -250,8 +286,8 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           const SizedBox(height: 12),
           Text(
             value,
-            style: GoogleFonts.poppins(
-              fontSize: 20,
+            style: TextStyle(
+              fontSize: 22,
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white : Colors.black87,
             ),
@@ -259,10 +295,9 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
           const SizedBox(height: 4),
           Text(
             label,
-            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
-              color: isDark ? Colors.white70 : Colors.grey.shade700,
+              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
           ),
         ],
@@ -270,197 +305,219 @@ class _AnalyticsScreenState extends State<AnalyticsScreen> {
     );
   }
 
-  Widget _buildSectionTitle(String title, bool isDark) {
-    return Text(
-      title,
-      style: GoogleFonts.poppins(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: isDark ? Colors.white : Colors.black87),
-    );
-  }
-
-  Widget _buildCategoryChart(bool isDark) {
-    if (_salesByCategory.isEmpty) {
-      return _emptyChartPlaceholder(isDark, 'No sales data yet');
+  Widget _buildBarChart(bool isDark) {
+    if (_totalListings == 0 && _pendingOrders == 0 && _completedOrders == 0) {
+      return Container(
+        height: 200,
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: isDark ? Colors.grey.shade800 : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Center(
+          child: Text(
+            'No data to display yet',
+            style: TextStyle(
+              color: isDark ? Colors.grey.shade500 : Colors.grey.shade400,
+            ),
+          ),
+        ),
+      );
     }
 
-    final total = _salesByCategory.values.reduce((a, b) => a + b);
-    final colors = [
-      Colors.blue,
-      Colors.green,
-      Colors.orange,
-      Colors.purple,
-      Colors.red,
-      Colors.teal
-    ];
-
     return Container(
-      height: 280,
-      padding: const EdgeInsets.all(16),
+      height: 300,
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
       decoration: BoxDecoration(
-        color: isDark
-            ? Colors.black.withOpacity(0.3)
-            : Colors.white.withOpacity(0.7),
+        color: isDark ? Colors.grey.shade800 : Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Column(
-        children: [
-          Expanded(
-            child: PieChart(
-              PieChartData(
-                sectionsSpace: 2,
-                centerSpaceRadius: 40,
-                sections: _salesByCategory.entries
-                    .toList()
-                    .asMap()
-                    .entries
-                    .map((entry) {
-                  final index = entry.key;
-                  final mapEntry = entry.value;
-                  final count = mapEntry.value;
-                  final percentage = (count / total * 100);
-                  return PieChartSectionData(
-                    color: colors[index % colors.length],
-                    value: count.toDouble(),
-                    title: '${percentage.toStringAsFixed(0)}%',
-                    radius: 50,
-                    titleStyle: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white),
-                  );
-                }).toList(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 8,
-            children:
-                _salesByCategory.entries.toList().asMap().entries.map((entry) {
-              final index = entry.key;
-              final mapEntry = entry.value;
-              final category = mapEntry.key;
-              final count = mapEntry.value;
-
-              return Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                          color: colors[index % colors.length],
-                          shape: BoxShape.circle)),
-                  const SizedBox(width: 6),
-                  Text('$category ($count)',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color:
-                              isDark ? Colors.white70 : Colors.grey.shade700)),
-                ],
-              );
-            }).toList(),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _emptyChartPlaceholder(bool isDark, String text) {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: isDark
-            ? Colors.black.withOpacity(0.3)
-            : Colors.white.withOpacity(0.7),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
-      ),
-      child: Center(
-        child: Text(
-          text,
-          style:
-              TextStyle(color: isDark ? Colors.white70 : Colors.grey.shade700),
+      child: BarChart(
+        BarChartData(
+          alignment: BarChartAlignment.spaceAround,
+          maxY: (_totalListings + _pendingOrders + _completedOrders + 5)
+              .toDouble(),
+          barTouchData: BarTouchData(
+            enabled: true,
+            touchTooltipData: BarTouchTooltipData(
+              getTooltipColor: (group) => Colors.blueGrey,
+              tooltipPadding: const EdgeInsets.all(8),
+              tooltipMargin: 8,
+              getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                String status;
+                switch (group.x) {
+                  case 0:
+                    status = 'Listings';
+                    break;
+                  case 1:
+                    status = 'Pending';
+                    break;
+                  case 2:
+                    status = 'Done';
+                    break;
+                  default:
+                    status = '';
+                }
+                return BarTooltipItem(
+                  '$status\n',
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: (rod.toY.toInt()).toString(),
+                      style: TextStyle(
+                        color: rod.color,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          titlesData: FlTitlesData(
+            show: true,
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (double value, TitleMeta meta) {
+                  const style = TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                  );
+                  Widget text;
+                  switch (value.toInt()) {
+                    case 0:
+                      text = Text('Listings',
+                          style: style.copyWith(color: Colors.blue));
+                      break;
+                    case 1:
+                      text = Text('Pending',
+                          style: style.copyWith(color: Colors.orange));
+                      break;
+                    case 2:
+                      text = Text('Done',
+                          style: style.copyWith(color: Colors.green));
+                      break;
+                    default:
+                      text = const Text('', style: style);
+                      break;
+                  }
+                  return SideTitleWidget(
+                    axisSide: meta.axisSide,
+                    space: 10,
+                    child: text,
+                  );
+                },
+                reservedSize: 40,
+              ),
+            ),
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 30,
+                getTitlesWidget: (value, meta) {
+                  if (value % 1 != 0) return const SizedBox.shrink();
+                  return Text(
+                    value.toInt().toString(),
+                    style: TextStyle(
+                      color:
+                          isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                      fontSize: 10,
+                    ),
+                  );
+                },
+              ),
+            ),
+            topTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles:
+                const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: 1,
+            getDrawingHorizontalLine: (value) {
+              return FlLine(
+                color: isDark ? Colors.grey.shade700 : Colors.grey.shade200,
+                strokeWidth: 1,
+              );
+            },
+          ),
+          borderData: FlBorderData(show: false),
+          barGroups: [
+            BarChartGroupData(
+              x: 0,
+              barRods: [
+                BarChartRodData(
+                  toY: _totalListings.toDouble(),
+                  color: Colors.blue,
+                  width: 25,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(6)),
+                  backDrawRodData: BackgroundBarChartRodData(
+                    show: true,
+                    toY:
+                        (_totalListings + _pendingOrders + _completedOrders + 5)
+                            .toDouble(),
+                    color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+                  ),
+                ),
+              ],
+            ),
+            BarChartGroupData(
+              x: 1,
+              barRods: [
+                BarChartRodData(
+                  toY: _pendingOrders.toDouble(),
+                  color: Colors.orange,
+                  width: 25,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(6)),
+                  backDrawRodData: BackgroundBarChartRodData(
+                    show: true,
+                    toY:
+                        (_totalListings + _pendingOrders + _completedOrders + 5)
+                            .toDouble(),
+                    color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+                  ),
+                ),
+              ],
+            ),
+            BarChartGroupData(
+              x: 2,
+              barRods: [
+                BarChartRodData(
+                  toY: _completedOrders.toDouble(),
+                  color: Colors.green,
+                  width: 25,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(6)),
+                  backDrawRodData: BackgroundBarChartRodData(
+                    show: true,
+                    toY:
+                        (_totalListings + _pendingOrders + _completedOrders + 5)
+                            .toDouble(),
+                    color: isDark ? Colors.grey.shade900 : Colors.grey.shade100,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
-    );
-  }
-
-  Widget _buildRecentSales(bool isDark) {
-    if (_recentSales.isEmpty)
-      return _emptyChartPlaceholder(isDark, 'No sales yet');
-
-    return Column(
-      children: _recentSales.map((sale) {
-        final productName = sale['productName'] ?? 'Unknown Product';
-        final price = sale['price'] ?? 0.0;
-        final buyerName = sale['buyerName'] ?? 'Unknown Buyer';
-        final timestamp = sale['createdAt'] as Timestamp?;
-        final date = timestamp?.toDate();
-        final dateStr =
-            date != null ? '${date.day}/${date.month}/${date.year}' : 'N/A';
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.black.withOpacity(0.3)
-                : Colors.white.withOpacity(0.7),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.white.withOpacity(0.2)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.check_circle,
-                    color: Colors.green, size: 24),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(productName,
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 15,
-                            color: isDark ? Colors.white : Colors.black87)),
-                    const SizedBox(height: 4),
-                    Text('Buyer: $buyerName',
-                        style: TextStyle(
-                            fontSize: 13,
-                            color: isDark
-                                ? Colors.white70
-                                : Colors.grey.shade600)),
-                    const SizedBox(height: 2),
-                    Text(dateStr,
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? Colors.white38
-                                : Colors.grey.shade500)),
-                  ],
-                ),
-              ),
-              Text('₱${price.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.green)),
-            ],
-          ),
-        );
-      }).toList(),
     );
   }
 }
