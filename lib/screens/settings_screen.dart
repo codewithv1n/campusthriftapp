@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SettingsScreen extends StatefulWidget {
   final Function(bool)? onThemeChanged;
@@ -15,6 +16,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   late bool _darkModeEnabled;
   String _selectedLanguage = 'English';
+  String? _currentUserId;
+  String? _currentUserName;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+    _loadNotificationSettings();
+  }
 
   @override
   void didChangeDependencies() {
@@ -22,14 +32,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _darkModeEnabled = Theme.of(context).brightness == Brightness.dark;
   }
 
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _currentUserId = prefs.getString('studentId');
+      _currentUserName = prefs.getString('fullName');
+    });
+
+    print('DEBUG - Current User ID: $_currentUserId');
+    print('DEBUG - Current User Name: $_currentUserName');
+  }
+
+  Future<void> _loadNotificationSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _notificationsEnabled = prefs.getBool('notificationsEnabled') ?? true;
+    });
+  }
+
+  Future<void> _saveNotificationSettings(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('notificationsEnabled', value);
+  }
+
   Future<void> _toggleDarkMode(bool value) async {
     setState(() => _darkModeEnabled = value);
 
-    // Save to SharedPreferences
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', value);
 
-    // Call the theme change callback
     widget.onThemeChanged?.call(value);
   }
 
@@ -109,9 +140,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               icon: Icons.person_outline,
                               iconColor: Colors.blue,
                               title: 'Edit Profile',
-                              subtitle: 'Update your personal information',
-                              onTap: () =>
-                                  _showComingSoon(context, 'Edit Profile'),
+                              subtitle: 'Update your name',
+                              onTap: () => _showEditProfileDialog(context),
                             ),
                             const Divider(height: 1),
                             _buildSettingsTile(
@@ -119,8 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               iconColor: Colors.orange,
                               title: 'Change Password',
                               subtitle: 'Update your password',
-                              onTap: () =>
-                                  _showComingSoon(context, 'Change Password'),
+                              onTap: () => _showChangePasswordDialog(context),
                             ),
                           ],
                         ),
@@ -139,6 +168,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               value: _notificationsEnabled,
                               onChanged: (value) {
                                 setState(() => _notificationsEnabled = value);
+                                _saveNotificationSettings(value);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(value
+                                        ? 'Notifications enabled'
+                                        : 'Notifications disabled'),
+                                    behavior: SnackBarBehavior.floating,
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
                               },
                             ),
                           ],
@@ -302,12 +341,283 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$feature feature coming soon!'),
-        behavior: SnackBarBehavior.floating,
-      ),
+  void _showEditProfileDialog(BuildContext context) {
+    final nameController = TextEditingController(text: _currentUserName ?? '');
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AlertDialog(
+          backgroundColor: isDark ? Colors.grey.shade900 : Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            'Edit Profile',
+            style: TextStyle(
+              color: isDark ? Colors.white : Colors.black87,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: TextField(
+            controller: nameController,
+            style: TextStyle(color: isDark ? Colors.white : Colors.black),
+            decoration: InputDecoration(
+              labelText: 'Full Name',
+              labelStyle:
+                  TextStyle(color: isDark ? Colors.grey.shade400 : Colors.grey),
+              prefixIcon: Icon(Icons.person,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(
+                    color:
+                        isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.blue),
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                    color: isDark ? Colors.grey.shade400 : Colors.grey),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (nameController.text.isEmpty) return;
+
+                if (_currentUserId == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please login again.')),
+                  );
+                  return;
+                }
+
+                try {
+                  final querySnapshot = await FirebaseFirestore.instance
+                      .collection('users')
+                      .where('studentId', isEqualTo: _currentUserId)
+                      .get();
+
+                  if (querySnapshot.docs.isEmpty) {
+                    throw Exception('User record not found');
+                  }
+
+                  await querySnapshot.docs.first.reference.update({
+                    'fullName': nameController.text,
+                  });
+
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('fullName', nameController.text);
+
+                  setState(() {
+                    _currentUserName = nameController.text;
+                  });
+
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Profile updated successfully!'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  print('Error: $e');
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
+                  }
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    bool showCurrentPassword = false;
+    bool showNewPassword = false;
+    bool showConfirmPassword = false;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: isDark ? Colors.grey.shade900 : Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: Text(
+                'Change Password',
+                style: TextStyle(
+                  color: isDark ? Colors.white : Colors.black87,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: currentPasswordController,
+                      obscureText: !showCurrentPassword,
+                      style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black),
+                      decoration: InputDecoration(
+                        labelText: 'Current Password',
+                        suffixIcon: IconButton(
+                          icon: Icon(showCurrentPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off),
+                          onPressed: () => setDialogState(
+                              () => showCurrentPassword = !showCurrentPassword),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: newPasswordController,
+                      obscureText: !showNewPassword,
+                      style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black),
+                      decoration: InputDecoration(
+                        labelText: 'New Password',
+                        suffixIcon: IconButton(
+                          icon: Icon(showNewPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off),
+                          onPressed: () => setDialogState(
+                              () => showNewPassword = !showNewPassword),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: confirmPasswordController,
+                      obscureText: !showConfirmPassword,
+                      style: TextStyle(
+                          color: isDark ? Colors.white : Colors.black),
+                      decoration: InputDecoration(
+                        labelText: 'Confirm New Password',
+                        suffixIcon: IconButton(
+                          icon: Icon(showConfirmPassword
+                              ? Icons.visibility
+                              : Icons.visibility_off),
+                          onPressed: () => setDialogState(
+                              () => showConfirmPassword = !showConfirmPassword),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancel',
+                      style: TextStyle(
+                          color: isDark ? Colors.grey.shade400 : Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    // Basic Validation
+                    if (currentPasswordController.text.isEmpty ||
+                        newPasswordController.text.isEmpty ||
+                        confirmPasswordController.text.isEmpty) {
+                      return;
+                    }
+                    if (newPasswordController.text !=
+                        confirmPasswordController.text) {
+                      return;
+                    }
+
+                    try {
+                      final querySnapshot = await FirebaseFirestore.instance
+                          .collection('users')
+                          .where('studentId', isEqualTo: _currentUserId)
+                          .get();
+
+                      if (querySnapshot.docs.isEmpty) {
+                        throw Exception('User not found');
+                      }
+
+                      final userDoc = querySnapshot.docs.first;
+                      final userData = userDoc.data();
+                      final storedPassword = userData['password'] ?? '';
+
+                      // Verify Password
+                      if (storedPassword != currentPasswordController.text) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Current password is incorrect'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                        return;
+                      }
+
+                      await userDoc.reference.update({
+                        'password': newPasswordController.text,
+                      });
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Password changed successfully!'),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      print('Error: $e');
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e')),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Change Password'),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -339,6 +649,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       onChanged: (value) {
         setState(() => _selectedLanguage = value!);
         Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Language changed to $value'),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: Colors.teal,
+          ),
+        );
       },
       activeColor: Colors.teal,
     );
