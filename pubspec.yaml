@@ -13,6 +13,11 @@ dependencies:
   google_fonts: ^6.3.3
   loading_animation_widget: ^1.2.0+4
   image_picker: ^1.0.4
+  firebase_core: ^4.3.0
+  cloud_firestore: ^6.1.1
+  shared_preferences: ^2.5.4
+  fl_chart: ^0.69.0 
+  intl: ^0.20.2
 
 
 dev_dependencies:
